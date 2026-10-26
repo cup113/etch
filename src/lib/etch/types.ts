@@ -66,8 +66,6 @@ export type Variant = GenericVariant | DoudizhuVariant | UnoVariant | GuandanVar
 export interface Game {
 	id: string;
 	createdAt: number;
-	/** 磨碑时间；未磨则缺省 */
-	erasedAt?: number;
 	templateId: TemplateId;
 	variant: Variant;
 	/** 座位序；掼蛋按 0-2 / 1-3 成队 */

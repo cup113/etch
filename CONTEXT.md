@@ -1,7 +1,7 @@
 # Etch（刻）
 
 网页计分器：牌桌上一部手机传着用，每一笔记分像刻进石头——不可改、不可删、永不消失。
-*Etch — Scores that never vanish.*
+_Etch — Scores that never vanish._
 
 ## Language
 

@@ -35,11 +35,14 @@ export function unoRaceRound(input: UnoRaceInput, players: PlayerRef[]): RoundRe
 	if (input.remainders[input.winner] !== 0) {
 		throw new Error('赢家的剩牌点数应为 0');
 	}
-	const gained = players.reduce((sum, p) => (p.id === input.winner ? sum : sum + input.remainders[p.id]), 0);
+	const gained = players.reduce(
+		(sum, p) => (p.id === input.winner ? sum : sum + input.remainders[p.id]),
+		0
+	);
 	// 收 0 点的一局仍是一笔（账本要求非凿除笔至少一行）：记赢家 +0
 	return {
 		lines: [{ playerId: input.winner, delta: gained }],
-		note: `收 ${gained} 点`
+		note: `+${gained}`
 	};
 }
 
@@ -56,8 +59,7 @@ export function unoEliminationRound(input: UnoEliminationInput, players: PlayerR
 		// 无人吃分的一局仍是一笔：记出牌者 +0
 		lines.push({ playerId: input.winner, delta: 0 });
 	}
-	const note = lines.length === 1 && lines[0].delta === 0 ? '无人吃分' : `吃分 ${lines.reduce((s, l) => s + l.delta, 0)} 点`;
-	return { lines, note };
+	return { lines, note: `+${lines.reduce((s, l) => s + l.delta, 0)}` };
 }
 
 function detectUno(game: Game): Proclamation[] {

@@ -19,7 +19,14 @@ function mkGame() {
 describe('拓片', () => {
 	it('rub → unrub 往返一致（含被凿笔）', () => {
 		let g = mkGame();
-		g = appendEntry(g, { id: 'c1', seq: 3, ts: 1, kind: 'chisel', chisels: g.entries[0].id, lines: [] });
+		g = appendEntry(g, {
+			id: 'c1',
+			seq: 3,
+			ts: 1,
+			kind: 'chisel',
+			chisels: g.entries[0].id,
+			lines: []
+		});
 		const restored = unrub(rub(g));
 		expect(restored).toEqual(g);
 		expect(restored.entries).toHaveLength(3);

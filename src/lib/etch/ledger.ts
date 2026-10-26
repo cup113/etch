@@ -52,10 +52,16 @@ function validateAppend(game: Game, entry: Entry): void {
 		const target = game.entries.find((e) => e.id === entry.chisels);
 		if (!target) throw new LedgerError('chisel-target-missing', `no entry ${entry.chisels}`);
 		if (target.kind === 'chisel') {
-			throw new LedgerError('chisel-of-chisel', 'a chisel cannot be chiseled; etch a new entry instead');
+			throw new LedgerError(
+				'chisel-of-chisel',
+				'a chisel cannot be chiseled; etch a new entry instead'
+			);
 		}
 		if (isChiseled(game, target.id)) {
-			throw new LedgerError('chisel-target-already-chiseled', `entry ${target.id} is already chiseled`);
+			throw new LedgerError(
+				'chisel-target-already-chiseled',
+				`entry ${target.id} is already chiseled`
+			);
 		}
 	} else if (entry.lines.length === 0) {
 		throw new LedgerError('manual-entry-needs-lines', 'a non-chisel entry needs at least one line');

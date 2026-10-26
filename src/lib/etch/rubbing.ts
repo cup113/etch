@@ -1,7 +1,7 @@
 // 拓片：一块碑的版本化 JSON 导出/导入（ADR-0002：跨设备的唯一通道）。
 
 import type { Game } from './types';
-import { validateGame, type LedgerError } from './ledger';
+import { validateGame } from './ledger';
 
 export const RUBBING_VERSION = 1;
 
@@ -58,9 +58,4 @@ export function unrub(text: string): Game {
 		throw new RubbingError(`碑面数据校验失败：${reason}`);
 	}
 	return g;
-}
-
-// 让 unrub 的 catch 分支可测：导出错误类型判断辅助
-export function isLedgerError(err: unknown): err is LedgerError {
-	return err instanceof LedgerError;
 }

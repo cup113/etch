@@ -32,7 +32,8 @@ export function doudizhuRound(input: DoudizhuInput, players: PlayerRef[]): Round
 			{ playerId: input.landlord, delta: landlordDelta },
 			...farmers.map((p) => ({ playerId: p.id, delta: farmerDelta }))
 		],
-		note: `底分 ${input.base} × ${input.multiplier}，${input.landlordWon ? '地主' : '农民'}胜`
+		// note 必须语言中立（碑上持久存储，两种界面语言都要可读）
+		note: `${input.base}×${input.multiplier}`
 	};
 }
 

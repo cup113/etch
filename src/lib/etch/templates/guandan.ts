@@ -7,7 +7,21 @@ import { fold } from '../ledger';
 import type { RoundResult, Template } from './index';
 
 /** 级牌名：级数 0 显示 GUANDAN_LEVELS[0]='2'，级数 12 = 'A'。过 A = 级数 ≥ 13。 */
-export const GUANDAN_LEVELS = ['2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K', 'A'] as const;
+export const GUANDAN_LEVELS = [
+	'2',
+	'3',
+	'4',
+	'5',
+	'6',
+	'7',
+	'8',
+	'9',
+	'10',
+	'J',
+	'Q',
+	'K',
+	'A'
+] as const;
 export const GUANDAN_CAP = GUANDAN_LEVELS.length; // 13
 
 export function levelName(level: number): string {
@@ -40,7 +54,7 @@ export function guandanRound(
 		.map(({ p }) => ({ playerId: p.id, delta: levels }));
 	return {
 		lines,
-		note: input.doubleDown ? `双下进 ${levels} 级` : `进 ${levels} 级`
+		note: `+${levels}`
 	};
 }
 

@@ -27,18 +27,24 @@ describe('模板注册表', () => {
 describe('斗地主：倍数对称', () => {
 	it('地主胜：±2/∓1 份', () => {
 		const g = mkGame('doudizhu', { kind: 'doudizhu' }, 3);
-		const r = doudizhuRound({ landlord: 'p1', landlordWon: true, base: 20, multiplier: 4 }, g.players);
+		const r = doudizhuRound(
+			{ landlord: 'p1', landlordWon: true, base: 20, multiplier: 4 },
+			g.players
+		);
 		expect(r.lines).toEqual([
 			{ playerId: 'p1', delta: 160 },
 			{ playerId: 'p2', delta: -80 },
 			{ playerId: 'p3', delta: -80 }
 		]);
-		expect(r.note).toContain('地主');
+		expect(r.note).toBe('20×4');
 	});
 
 	it('农民胜：地主输双份', () => {
 		const g = mkGame('doudizhu', { kind: 'doudizhu' }, 3);
-		const r = doudizhuRound({ landlord: 'p2', landlordWon: false, base: 10, multiplier: 1 }, g.players);
+		const r = doudizhuRound(
+			{ landlord: 'p2', landlordWon: false, base: 10, multiplier: 1 },
+			g.players
+		);
 		expect(r.lines).toEqual([
 			{ playerId: 'p2', delta: -20 },
 			{ playerId: 'p1', delta: 10 },
@@ -48,7 +54,9 @@ describe('斗地主：倍数对称', () => {
 
 	it('人数与参数校验', () => {
 		const g2 = mkGame('doudizhu', { kind: 'doudizhu' }, 2);
-		expect(() => doudizhuRound({ landlord: 'p1', landlordWon: true, base: 1, multiplier: 1 }, g2.players)).toThrow();
+		expect(() =>
+			doudizhuRound({ landlord: 'p1', landlordWon: true, base: 1, multiplier: 1 }, g2.players)
+		).toThrow();
 		const g3 = mkGame('doudizhu', { kind: 'doudizhu' }, 3);
 		expect(() =>
 			doudizhuRound({ landlord: 'p1', landlordWon: true, base: 0, multiplier: 1 }, g3.players)
@@ -75,7 +83,10 @@ describe('UNO：两种变体', () => {
 
 	it('elimination：各吃各的', () => {
 		const g = mkGame('uno', { kind: 'uno', mode: 'elimination', threshold: 300 }, 3);
-		const r = unoEliminationRound({ winner: 'p1', remainders: { p1: 0, p2: 12, p3: 40 } }, g.players);
+		const r = unoEliminationRound(
+			{ winner: 'p1', remainders: { p1: 0, p2: 12, p3: 40 } },
+			g.players
+		);
 		expect(r.lines).toEqual([
 			{ playerId: 'p2', delta: 12 },
 			{ playerId: 'p3', delta: 40 }
@@ -129,7 +140,9 @@ describe('掼蛋：级数与过A', () => {
 	it('座位成队 0-2 / 1-3；恰好 4 人', () => {
 		expect([0, 1, 2, 3].map(teamOfSeat)).toEqual([0, 1, 0, 1]);
 		const g3 = mkGame('guandan', { kind: 'guandan', levelsPerDoubleDown: 2 }, 3);
-		expect(() => guandanRound({ winningTeam: 0, doubleDown: false }, g3.players, g3.variant)).toThrow();
+		expect(() =>
+			guandanRound({ winningTeam: 0, doubleDown: false }, g3.players, g3.variant)
+		).toThrow();
 	});
 
 	it('级牌名与过A：级数 12 显示 A，≥13 宣告封顶', () => {
