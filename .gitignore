@@ -18,6 +18,20 @@ Thumbs.db
 !.env.example
 !.env.test
 
+# Android 签名材料 —— 永不入库（ADR-0003）。
+# git 历史是永久的：公开仓库里出现过一次，更新签名权就归所有人了。
+*.jks
+*.keystore
+keystore.properties
+
+# Android 壳的生成物。Capacitor 自己的 android/.gitignore 也覆盖了这些，
+# 但 eslint 的 includeIgnoreFile 只读根 .gitignore —— 少写一条，lint 就会
+# 去检查 `cap sync` 复制进来的压缩产物。
+/android/app/src/main/assets/
+/android/**/build/
+/android/.gradle/
+/android/local.properties
+
 # Vite
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*

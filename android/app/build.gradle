@@ -1,0 +1,101 @@
+apply plugin: 'com.android.application'
+
+// 发行签名（ADR-0003）：密钥永不入库，口令永不落盘。
+// CI 只在这几十秒里把 .jks 解码到临时路径，字段全部从环境变量读，
+// 因此不存在被误提交的 keystore.properties。
+def etchKey = [
+    storeFile    : System.getenv("ETCH_KEYSTORE_PATH"),
+    storePassword: System.getenv("ETCH_KEYSTORE_PASSWORD"),
+    keyAlias     : System.getenv("ETCH_KEY_ALIAS"),
+    keyPassword  : System.getenv("ETCH_KEY_PASSWORD"),
+]
+def hasEtchKey = etchKey.every { _, v -> v != null && !v.trim().isEmpty() }
+
+// 必须用赋值而不是 `versionCode <expr>`：DSL 里 `versionCode(...)` 会被 Groovy
+// 解析成"调用 versionCode 这个属性"，而它在默认配置里是 null，构建直接以
+// IllegalArgumentException: Value is null 失败（配置阶段就炸，跟签名无关）。
+def etchVersionCode = (System.getenv("ETCH_VERSION_CODE") ?: "1").toInteger()
+def etchVersionName = System.getenv("ETCH_VERSION_NAME") ?: "1.0"
+
+android {
+    namespace "io.github.cup113.etch"
+    compileSdk rootProject.ext.compileSdkVersion
+    defaultConfig {
+        applicationId "io.github.cup113.etch"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        // versionCode 必须单调递增：系统拒绝 versionCode 不大于已安装版本的覆盖安装。
+        versionCode = etchVersionCode
+        versionName = etchVersionName
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        aaptOptions {
+             // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
+             // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
+            ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
+        }
+    }
+    signingConfigs {
+        if (hasEtchKey) {
+            release {
+                storeFile file(etchKey.storeFile)
+                storePassword etchKey.storePassword
+                keyAlias etchKey.keyAlias
+                keyPassword etchKey.keyPassword
+            }
+        }
+    }
+    buildTypes {
+        release {
+            // 不启用 R8：Capacitor 的桥靠反射找插件类，混淆规则要自己维护，
+            // 收益（包体几 MB）不值得引入一类只有真机才复现的崩溃。
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (hasEtchKey) {
+                signingConfig signingConfigs.release
+            }
+        }
+    }
+}
+
+// 缺密钥时 assembleRelease 必须响亮地失败，绝不静默退化成未签名包。
+// 一个「能装」但没签对的包被当成发行版发出去，等于把更新签名权交给所有人。
+if (!hasEtchKey) {
+    gradle.taskGraph.whenReady { graph ->
+        def releaseTasks = ['assembleRelease', 'bundleRelease', 'installRelease', 'packageRelease']
+        if (graph.allTasks.any { it.name in releaseTasks }) {
+            throw new GradleException(
+                "缺少发行签名密钥。设置 ETCH_KEYSTORE_PATH / ETCH_KEYSTORE_PASSWORD / " +
+                "ETCH_KEY_ALIAS / ETCH_KEY_PASSWORD 后重试；调试请用 assembleDebug。"
+            )
+        }
+    }
+}
+
+repositories {
+    flatDir{
+        dirs '../capacitor-cordova-android-plugins/src/main/libs', 'libs'
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
+    implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
+    implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation project(':capacitor-android')
+    testImplementation "junit:junit:$junitVersion"
+    androidTestImplementation "androidx.test.ext:junit:$androidxJunitVersion"
+    androidTestImplementation "androidx.test.espresso:espresso-core:$androidxEspressoCoreVersion"
+    implementation project(':capacitor-cordova-android-plugins')
+}
+
+apply from: 'capacitor.build.gradle'
+
+try {
+    def servicesJSON = file('google-services.json')
+    if (servicesJSON.text) {
+        apply plugin: 'com.google.gms.google-services'
+    }
+} catch(Exception e) {
+    logger.info("google-services.json not found, google-services plugin not applied. Push Notifications won't work")
+}

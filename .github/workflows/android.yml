@@ -1,0 +1,140 @@
+name: Android APK
+
+# 只手动或打 tag 触发：fork 来的 PR 拿不到 secret（这是 GitHub 的设计），
+# 而且没有理由让外部 PR 消耗一次签名。
+on:
+  workflow_dispatch:
+    inputs:
+      version_name:
+        description: 'versionName（留空则取 tag，否则 0.0.0-dev.<run>）'
+        required: false
+        default: ''
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write # 挂 GitHub Release
+  id-token: write # 构建来源证明（attestation）
+  attestations: write
+
+concurrency:
+  group: android-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # android/ 是在 Windows 上生成的，git 里记的是 644；而 cap sync 与
+      # ./gradlew 都要求它可执行。
+      - name: Make gradlew executable
+        run: chmod +x android/gradlew
+
+      - uses: pnpm/action-setup@v4 # 版本取自 package.json 的 packageManager
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: android-actions/setup-android@v3
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build web bundle
+        run: pnpm build
+
+      - name: Sync Capacitor
+        run: pnpm run android:sync
+
+      - name: Resolve version
+        id: v
+        env:
+          INPUT_NAME: ${{ inputs.version_name }}
+        run: |
+          name="$INPUT_NAME"
+          if [ -z "$name" ]; then
+            case "$GITHUB_REF" in
+              refs/tags/*) name="${GITHUB_REF_NAME#v}" ;;
+              *) name="0.0.0-dev.${{ github.run_number }}" ;;
+            esac
+          fi
+          echo "name=$name" >> "$GITHUB_OUTPUT"
+          echo "versionName=$name"
+
+      # 密钥只在这几十秒里存在于 runner 上。落在 $RUNNER_TEMP（工作区之外），
+      # 所以它不会被任何 upload-artifact 的 glob 顺手带走。
+      - name: Materialise keystore
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+        run: |
+          if [ -z "$ANDROID_KEYSTORE_BASE64" ]; then
+            echo "::error::缺少 ANDROID_KEYSTORE_BASE64 —— 见 docs/adr/0003-apk-packaging-and-key-custody.md"
+            exit 1
+          fi
+          umask 077
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/etch-release.jks"
+          echo "ETCH_KEYSTORE_PATH=$RUNNER_TEMP/etch-release.jks" >> "$GITHUB_ENV"
+
+      - name: Build signed release APK
+        working-directory: android
+        env:
+          ETCH_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ETCH_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ETCH_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ETCH_VERSION_CODE: ${{ github.run_number }}
+          ETCH_VERSION_NAME: ${{ steps.v.outputs.name }}
+        run: ./gradlew assembleRelease --no-daemon
+
+      # 签名对了没有，是这里唯一值得断言的事：签错的包能装，但永远覆盖不了
+      # 已装的那个（签名不一致），而作者往往到发版当天才发现。
+      - name: Verify signature
+        env:
+          EXPECTED_SHA256: ${{ vars.ANDROID_CERT_SHA256 }}
+        run: |
+          APK=android/app/build/outputs/apk/release/app-release.apk
+          BUILD_TOOLS=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          "$BUILD_TOOLS/apksigner" verify --print-certs "$APK" | tee "$RUNNER_TEMP/certs.txt"
+          SHA=$("$BUILD_TOOLS/apksigner" verify --print-certs "$APK" \
+            | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
+          echo "证书 SHA-256: $SHA" >> "$GITHUB_STEP_SUMMARY"
+          if [ -n "$EXPECTED_SHA256" ] && [ "$SHA" != "$EXPECTED_SHA256" ]; then
+            echo "::error::签名证书与 ANDROID_CERT_SHA256 不符 —— 这个包无法覆盖安装已有版本"
+            exit 1
+          fi
+          if [ -z "$EXPECTED_SHA256" ]; then
+            echo "::warning::未设置仓库变量 ANDROID_CERT_SHA256，本次无法校验签名身份"
+          fi
+
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@v2
+        with:
+          subject-path: android/app/build/outputs/apk/release/app-release.apk
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: etch-apk
+          path: android/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Publish release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: android/app/build/outputs/apk/release/app-release.apk
+          generate_release_notes: true
+
+      - name: Remove keystore
+        if: always()
+        run: rm -f "$RUNNER_TEMP/etch-release.jks"

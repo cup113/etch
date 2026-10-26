@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- @capacitor/android 自带 colors.xml 把这几个设成 indigo（#3F51B5 等）。
+     应用级资源覆盖库资源，这里改回石色，否则启动器/状态栏会在黑白界面之外
+     露出一块蓝紫。 -->
+<resources>
+    <color name="colorPrimary">#1c1917</color>
+    <color name="colorPrimaryDark">#1c1917</color>
+    <color name="colorAccent">#f5f5f4</color>
+</resources>

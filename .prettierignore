@@ -7,3 +7,9 @@ bun.lockb
 
 # Miscellaneous
 /static/
+
+# Android 壳：`cap sync` 会把构建产物整份复制进 app/src/main/assets，
+# 那是产物而不是源码，格式化它既无意义也会让 check 变红。
+/android/app/src/main/assets/
+/android/**/build/
+/android/.gradle/

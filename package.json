@@ -4,6 +4,7 @@
 	"version": "0.0.1",
 	"description": "Etch — Scores that never vanish. Offline-first scorekeeper for card tables.",
 	"license": "MIT",
+	"packageManager": "pnpm@11.22.0",
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev",
@@ -16,9 +17,13 @@
 		"format": "prettier --write .",
 		"test:unit": "vitest",
 		"test": "npm run test:unit -- --run && npm run test:e2e",
-		"test:e2e": "playwright install && playwright test"
+		"test:e2e": "playwright install && playwright test",
+		"android:add": "cap add android",
+		"android:sync": "cap sync android",
+		"android:open": "cap open android"
 	},
 	"devDependencies": {
+		"@capacitor/cli": "^7.6.9",
 		"@eslint/js": "^10.0.1",
 		"@playwright/test": "^1.60.0",
 		"@sveltejs/adapter-auto": "^8.0.0",
@@ -52,6 +57,8 @@
 		"#lib/*": "./src/lib/*"
 	},
 	"dependencies": {
+		"@capacitor/android": "^7.6.9",
+		"@capacitor/core": "^7.6.9",
 		"idb": "^8.0.4"
 	}
 }

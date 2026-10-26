@@ -54,6 +54,47 @@ pnpm run preview    # 本地预览构建产物
 
 产物是纯静态目录 + Service Worker，**任何静态宿主都能放**（GitHub Pages、Vercel、Nginx、自己的容器）。若部署在子路径（如 GitHub Pages 项目页），构建时设置 `base`。
 
+## Android APK
+
+`android/` 是 [Capacitor](https://capacitorjs.com/) 壳：`build/` 整站被复制进 APK，由 WebView 从 `https://localhost` 加载。**不是 TWA** —— 不加载远端 URL、不需要域名与 `assetlinks.json`、装完断网即用。决策与代价见 [ADR-0003](docs/adr/0003-apk-packaging-and-key-custody.md)。
+
+本地出调试包（需要 JDK 21 + Android SDK）：
+
+```sh
+pnpm run build
+pnpm run android:sync
+cd android && ./gradlew assembleDebug   # Windows: gradlew.bat
+```
+
+发行包只由 [`.github/workflows/android.yml`](.github/workflows/android.yml) 产出：打 `v*` tag（或手动触发）→ 签名 APK + GitHub Release + 构建来源证明。
+
+### 签名密钥
+
+**密钥不入库，口令不落盘。** 一次性生成（本机，别放仓库里）：
+
+```sh
+keytool -genkeypair -v -keystore etch-release.jks -storetype PKCS12 \
+  -alias etch -keyalg RSA -keysize 4096 -validity 10000
+```
+
+| 名称                        | 类型     | 用途                                   |
+| --------------------------- | -------- | -------------------------------------- |
+| `ANDROID_KEYSTORE_BASE64`   | secret   | `.jks` 的 base64                       |
+| `ANDROID_KEYSTORE_PASSWORD` | secret   | store 口令                             |
+| `ANDROID_KEY_ALIAS`         | secret   | `etch`                                 |
+| `ANDROID_KEY_PASSWORD`      | secret   | key 口令                               |
+| `ANDROID_CERT_SHA256`       | variable | 证书指纹，用来断言"签的确实是这把 key" |
+
+用 `gh` 从 stdin 写入，口令不进 argv 与 shell 历史：
+
+```sh
+base64 -w0 etch-release.jks | gh secret set ANDROID_KEYSTORE_BASE64
+gh secret set ANDROID_KEYSTORE_PASSWORD
+gh secret set ANDROID_KEY_PASSWORD
+```
+
+**然后：把 `.jks` 和口令存进密码管理器，再留一份离线备份。** 密钥丢失 = 无法覆盖安装已有版本 = 用户必须卸载重装 = IndexedDB 清空。对 Etch 来说那等于账本丢失——除非事先导出过拓片。
+
 ## 开发
 
 ```sh
