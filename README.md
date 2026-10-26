@@ -68,6 +68,8 @@ cd android && ./gradlew assembleDebug   # Windows: gradlew.bat
 
 发行包只由 [`.github/workflows/android.yml`](.github/workflows/android.yml) 产出：打 `v*` tag（或手动触发）→ 签名 APK + GitHub Release + 构建来源证明。
 
+已发布的包在 [Releases](https://github.com/cup113/etch/releases)：下载 `.apk` 装到手机上即可（首次需允许"安装未知应用"）。升级直接覆盖安装——前提是新包的签名密钥与前一个相同，这也是下面那一节存在的原因。
+
 ### 签名密钥
 
 **密钥不入库，口令不落盘。** 一次性生成（本机，别放仓库里）：

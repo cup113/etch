@@ -93,7 +93,9 @@ jobs:
         working-directory: android
         env:
           ETCH_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          ETCH_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          # alias 不是机密材料，只是 keystore 里的一个标签；缺省 etch，
+          # 用别的名字签名时再设同名 secret 覆盖。
+          ETCH_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS || 'etch' }}
           ETCH_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
           ETCH_VERSION_CODE: ${{ github.run_number }}
           ETCH_VERSION_NAME: ${{ steps.v.outputs.name }}
