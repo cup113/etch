@@ -17,6 +17,14 @@ _Etch — Scores that never vanish._
 
 领域术语（碑、笔、凿除、折叠、拓片……）见 [CONTEXT.md](CONTEXT.md)。
 
+## 界面
+
+| 首页 | 开碑 | 碑面 |
+|---|---|---|
+| ![首页](docs/screenshots/01-home.png) | ![开碑](docs/screenshots/02-new-tablet.png) | ![碑面](docs/screenshots/04-board-scored.png) |
+
+更多：`docs/screenshots/`（空碑、两笔刻痕、凿除确认、设置）。
+
 ## 开发
 
 ```sh
