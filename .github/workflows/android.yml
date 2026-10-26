@@ -44,7 +44,10 @@ jobs:
           distribution: temurin
           java-version: 21
 
-      - uses: android-actions/setup-android@v3
+      # 不装 android-actions/setup-android：ubuntu-latest 自带 SDK（ANDROID_HOME
+      # 已设、licenses 已接受），而该 action 最新版在当前镜像上跑 `sdkmanager tools`
+      # 会报 "Failed to find package 'tools'" 并以 exit 1 失败——实测整个作业
+      # 死在第 7 步。缺的 build-tools 由 AGP 自己按需安装（licenses 已接受）。
 
       - uses: gradle/actions/setup-gradle@v4
 
