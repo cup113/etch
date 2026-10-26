@@ -53,4 +53,28 @@ describe('TotalsGrid', () => {
 
 		await expect.element(page.getByTestId('total-p1')).toHaveTextContent(/甲\s*A/);
 	});
+
+	it('双升碑同样显示级牌名；负级数（倒级防御）钳到 2', async () => {
+		let g = newGame({
+			templateId: 'shuangsheng',
+			variant: {
+				kind: 'shuangsheng',
+				levelsAt80: 0,
+				defenderCapScore: 0,
+				grandWinBonus: false,
+				allowRollback: false,
+				firstDeclarerTeam: 0
+			},
+			players: [
+				{ id: 'p1', name: '甲' },
+				{ id: 'p2', name: '乙' },
+				{ id: 'p3', name: '丙' },
+				{ id: 'p4', name: '丁' }
+			]
+		});
+		g = appendEntry(g, manualEntry(1, [{ playerId: 'p1', delta: -1 }]));
+		render(TotalsGrid, { game: g });
+
+		await expect.element(page.getByTestId('total-p1')).toHaveTextContent(/甲\s*2/);
+	});
 });

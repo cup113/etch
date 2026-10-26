@@ -22,12 +22,16 @@ export const tplNameKey: Record<TemplateId, DictKey> = {
 	generic: 'tplGeneric',
 	doudizhu: 'tplDoudizhu',
 	uno: 'tplUno',
-	guandan: 'tplGuandan'
+	guandan: 'tplGuandan',
+	cabo: 'tplCabo',
+	shuangsheng: 'tplShuangsheng'
 };
 
 export const tplDescKey: Record<TemplateId, DictKey> = {
 	generic: 'tplGenericDesc',
 	doudizhu: 'tplDoudizhuDesc',
 	uno: 'tplUnoDesc',
-	guandan: 'tplGuandanDesc'
+	guandan: 'tplGuandanDesc',
+	cabo: 'tplCaboDesc',
+	shuangsheng: 'tplShuangshengDesc'
 };

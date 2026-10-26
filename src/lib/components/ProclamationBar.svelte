@@ -30,6 +30,11 @@
 						})}
 					{:else if procl.kind === 'last-standing'}
 						{t('proclLastStanding', { name: nameOf(game, procl.playerId) })}
+					{:else if procl.kind === 'cabo-finished'}
+						{t('proclCaboFinished', {
+							name: nameOf(game, procl.playerId),
+							threshold: procl.threshold
+						})}
 					{:else}
 						{t('proclLevelCapped', { name: nameOf(game, procl.playerId) })}
 					{/if}

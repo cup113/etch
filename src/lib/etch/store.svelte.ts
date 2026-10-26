@@ -73,7 +73,8 @@ export async function etch(
 		ts: Date.now(),
 		kind,
 		lines: round.lines,
-		note: round.note
+		note: round.note,
+		meta: round.meta
 	});
 	await persistGame(next);
 	return next;

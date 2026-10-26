@@ -11,7 +11,7 @@ Etch 是牌桌上传着用的计分器：每一笔记分是一次**刻**，落�
 
 - **追加式刻痕账本**：当前分永远由全部未凿笔**折叠**得出，历史完整可查（[ADR-0001](docs/adr/0001-append-only-entry-ledger.md)）
 - **单设备离线**：数据在本机 IndexedDB；PWA 可装主屏、断网可开；跨设备靠**拓片**（版本化 JSON 导出/导入）（[ADR-0002](docs/adr/0002-local-first-single-device-no-sync.md)）
-- **四个模板**：通用、斗地主、UNO、掼蛋——三种不同的规则形状，各自可配**变体**
+- **六个模板**：通用、UNO、CABO、斗地主、掼蛋、双升——四种不同的规则形状，各自可配**变体**
 - **碑不执法**：终局条件满足只**宣告**，从不锁死刻入，补局加刻永远自由
 - **中英双语**，单色高对比，落笔有"刻进去"的动效与轻微触感
 
@@ -21,14 +21,17 @@ Etch 是牌桌上传着用的计分器：每一笔记分是一次**刻**，落�
 
 ## 模板
 
-| 模板       | 规则形状 | 说明                                                                     |
-| ---------- | -------- | ------------------------------------------------------------------------ |
-| **通用**   | 任意整数 | 想记什么记什么，每名玩家一个增减                                         |
-| **斗地主** | 倍数对称 | 底分 × 倍数，地主 ±2 份、农民各 ∓1 份，一局一次刻入                      |
-| **UNO**    | 目标累积 | 计分制：赢家收对手剩牌点，先到目标分；出局制：各吃各的剩牌分，触线者出局 |
-| **掼蛋**   | 队伍级数 | 4 人两队（座位 1·3 / 2·4），胜队进级、双下跳级，过 A 宣告封顶            |
+| 模板       | 规则形状 | 说明                                                                                         |
+| ---------- | -------- | -------------------------------------------------------------------------------------------- |
+| **通用**   | 任意整数 | 想记什么记什么，每名玩家一个增减                                                             |
+| **UNO**    | 目标累积 | 计分制：赢家收对手剩牌点，先到目标分；出局制：各吃各的剩牌分，触线者出局                     |
+| **CABO**   | 目标累积 | 一轮里叫牌者记 0、其余各记剩牌点；到终局线（默认 100）最低分者胜                             |
+| **斗地主** | 倍数对称 | 底分 × 倍数，地主 ±2 份、农民各 ∓1 份，一局一次刻入                                          |
+| **掼蛋**   | 队伍级数 | 4 人两队（座位 1·3 / 2·4），按同伴名次进级：双下 3 级、单下 2 级、末游 1 级，过 A 宣告封顶   |
+| **双升**   | 队伍级数 | 4 人两队，只输闲家得分：<80 分庄家升、≥80 分闲家上台；大光 / 封顶 / 80 分升级数 / 回退均可配 |
 
 UNO 的两种玩法是**同一个模板的两个变体**——计分方向（升/降）与终局条件（领跑达标 / 触线出局）都是参数，不是硬编码。
+掼蛋与双升共享**级数**这一形状（2..A 十三级、过 A 封顶），但进级口径不同：掼蛋查同伴名次，双升查闲家得分并据此流转**庄家**。
 
 ## 界面
 
@@ -120,7 +123,7 @@ src/
 │   ├── etch/              # 领域核心：零 Svelte、零 DOM，可被 node 单测直接覆盖
 │   │   ├── types.ts       # 碑 / 笔 / 变体 / 宣告
 │   │   ├── ledger.ts      # append-only 不变量：折叠、追加、凿除
-│   │   ├── templates/     # 四个模板：形状 + 变体参数 + 终局检测
+│   │   ├── templates/     # 六个模板：形状 + 变体参数 + 终局检测（级牌塔 / 组队在 levels.ts、teams.ts）
 │   │   ├── rubbing.ts     # 拓片：版本化 JSON 导出/导入（导入时重放校验）
 │   │   ├── db.ts          # IndexedDB（idb）
 │   │   └── store.svelte.ts# 应用状态与动作（先写盘、再让 UI 可见）
@@ -140,7 +143,7 @@ SvelteKit 3（SPA 模式）· Svelte 5 runes · Tailwind CSS 4 · TypeScript · 
 
 No backend, no accounts. Data lives in local IndexedDB; the app installs as a PWA and works offline. Moving between devices happens through a **rubbing** — a versioned JSON export/import.
 
-Four templates (generic, Dou Dizhu, UNO with race/elimination variants, Guandan levels) cover three distinct scoring shapes. The stone never referees: when a win condition is met it is _proclaimed_, never enforced.
+Six templates (generic, UNO, CABO, Dou Dizhu, Guandan, Shuangsheng) cover four distinct scoring shapes. The stone never referees: when a win condition is met it is _proclaimed_, never enforced.
 
 ## License
 

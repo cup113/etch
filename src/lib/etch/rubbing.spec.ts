@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { appendEntry, manualEntry, newGame } from './ledger';
+import { appendEntry, manualEntry, newGame, nextSeq, newId } from './ledger';
 import { rub, unrub, RubbingError } from './rubbing';
+import { guandanRound } from './templates/guandan';
 
 function mkGame() {
 	let g = newGame({
@@ -50,5 +51,93 @@ describe('拓片', () => {
 		const bad = JSON.parse(rub(mkGame()));
 		bad.game.entries[1].seq = 9;
 		expect(() => unrub(JSON.stringify(bad))).toThrow(/校验失败/);
+	});
+
+	it('新模板拓片可导入（cabo / shuangsheng）', () => {
+		for (const game of [
+			newGame({
+				templateId: 'cabo',
+				variant: { kind: 'cabo', threshold: 100 },
+				players: [{ id: 'p1', name: '甲' }]
+			}),
+			newGame({
+				templateId: 'shuangsheng',
+				variant: {
+					kind: 'shuangsheng',
+					levelsAt80: 0,
+					defenderCapScore: 0,
+					grandWinBonus: false,
+					allowRollback: false,
+					firstDeclarerTeam: 0
+				},
+				players: [
+					{ id: 'p1', name: '甲' },
+					{ id: 'p2', name: '乙' },
+					{ id: 'p3', name: '丙' },
+					{ id: 'p4', name: '丁' }
+				]
+			})
+		]) {
+			expect(unrub(rub(game)).templateId).toBe(game.templateId);
+		}
+	});
+
+	it('旧 v1 掼蛋拓片（无 levelsPerSingleDown）导入回落为旧行为', () => {
+		const g = newGame({
+			templateId: 'guandan',
+			variant: { kind: 'guandan', levelsPerDoubleDown: 3, levelsPerSingleDown: 2 },
+			players: [
+				{ id: 'p1', name: '甲' },
+				{ id: 'p2', name: '乙' },
+				{ id: 'p3', name: '丙' },
+				{ id: 'p4', name: '丁' }
+			]
+		});
+		const legacy = JSON.parse(rub(g));
+		delete legacy.game.variant.levelsPerSingleDown;
+		const restored = unrub(JSON.stringify(legacy));
+		expect(restored.variant).toEqual({ kind: 'guandan', levelsPerDoubleDown: 3 });
+		// 三游按旧行为 1 级
+		const round = guandanRound(
+			{ winningTeam: 0, partnerRank: 3 },
+			restored.players,
+			restored.variant
+		);
+		expect(round.lines.every((l) => l.delta === 1)).toBe(true);
+	});
+
+	it('双升笔的 meta 随拓片往返保留（庄家重放的依据）', () => {
+		let g = newGame({
+			templateId: 'shuangsheng',
+			variant: {
+				kind: 'shuangsheng',
+				levelsAt80: 1,
+				defenderCapScore: 160,
+				grandWinBonus: true,
+				allowRollback: true,
+				firstDeclarerTeam: 1
+			},
+			players: [
+				{ id: 'p1', name: '甲' },
+				{ id: 'p2', name: '乙' },
+				{ id: 'p3', name: '丙' },
+				{ id: 'p4', name: '丁' }
+			]
+		});
+		const meta = { declarerTeam: 1 as const, defendersScore: 95 };
+		g = appendEntry(g, {
+			id: newId(),
+			seq: nextSeq(g),
+			ts: 1,
+			kind: 'template',
+			lines: [
+				{ playerId: 'p1', delta: 1 },
+				{ playerId: 'p3', delta: 1 }
+			],
+			note: '95→X+1',
+			meta
+		});
+		const restored = unrub(rub(g));
+		expect(restored.entries[0].meta).toEqual(meta);
 	});
 });

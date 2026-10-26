@@ -1,4 +1,6 @@
 // 拓片：一块碑的版本化 JSON 导出/导入（ADR-0002：跨设备的唯一通道）。
+// 版本策略：纯增量变更（新模板 id、Entry 可选字段）不升版本——旧拓片永远可读，
+// 旧版本 App 读到不认识的模板会被它自己的白名单拒绝（它本来也不会算那个模板）。
 
 import type { Game } from './types';
 import { validateGame } from './ledger';
@@ -44,7 +46,7 @@ export function unrub(text: string): Game {
 	if (
 		typeof g.id !== 'string' ||
 		typeof g.createdAt !== 'number' ||
-		!['generic', 'doudizhu', 'uno', 'guandan'].includes(g.templateId) ||
+		!['generic', 'doudizhu', 'uno', 'guandan', 'cabo', 'shuangsheng'].includes(g.templateId) ||
 		!Array.isArray(g.players) ||
 		g.players.length === 0 ||
 		!Array.isArray(g.entries)

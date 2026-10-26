@@ -24,6 +24,8 @@ export interface Entry {
 	note?: string;
 	/** 仅凿除笔：指向被凿的笔 */
 	chisels?: EntryId;
+	/** 结构化参数快照（双升：庄家/得分/回退；其余模板缺省，note 仍是人读文本） */
+	meta?: ShuangshengEntryMeta;
 	/** 增减行；凿除笔为空数组 */
 	lines: Line[];
 }
@@ -34,7 +36,7 @@ export interface PlayerRef {
 	name: string;
 }
 
-export type TemplateId = 'generic' | 'doudizhu' | 'uno' | 'guandan';
+export type TemplateId = 'generic' | 'doudizhu' | 'uno' | 'guandan' | 'cabo' | 'shuangsheng';
 
 /** 通用：纯手工账，无变体参数 */
 export interface GenericVariant {
@@ -54,13 +56,50 @@ export interface UnoVariant {
 	threshold: number;
 }
 
-/** 掼蛋：双下时的进级数（普通胜恒进 1 级） */
+/** 掼蛋：头游+二游（双下）与头游+三游（单下）的进级数都可配；头游+末游恒 1 级。
+ *  levelsPerSingleDown 可缺省 = 旧碑（恒 1）回落；levelsPerDoubleDown 类型容忍旧值 1。 */
 export interface GuandanVariant {
 	kind: 'guandan';
 	levelsPerDoubleDown: 1 | 2 | 3;
+	/** 旧碑无此字段；缺省按 1（升级前"普通胜恒 1 级"的行为） */
+	levelsPerSingleDown?: 1 | 2;
 }
 
-export type Variant = GenericVariant | DoudizhuVariant | UnoVariant | GuandanVariant;
+/** 双升：闲家得分 → 升级数的换算参数（换算表见 templates/shuangsheng.ts）。 */
+export interface ShuangshengVariant {
+	kind: 'shuangsheng';
+	/** 80 分（上台）时闲家升几级：0 = 只换庄不升级；1 = 上台占一级，整条闲家阶梯随之平移 */
+	levelsAt80: 0 | 1;
+	/** 闲家升数换算的封顶档：160 / 200 / 0（0 = 不封顶） */
+	defenderCapScore: 160 | 200 | 0;
+	/** 大光奖励：0 分时庄家升 4 而非 3 */
+	grandWinBonus: boolean;
+	/** 允许倒级（抠底回退的罕见房规）：开启后刻入表单出现可选回退区 */
+	allowRollback: boolean;
+	/** 首庄队伍（座位 0-2 = 队 0，1-3 = 队 1）；之后每笔由账本推导 */
+	firstDeclarerTeam: 0 | 1;
+}
+
+/** CABO：触线终局（到 threshold 宣告最低分者胜），门槛默认 100。 */
+export interface CaboVariant {
+	kind: 'cabo';
+	threshold: number;
+}
+
+export type Variant =
+	GenericVariant | DoudizhuVariant | UnoVariant | GuandanVariant | ShuangshengVariant | CaboVariant;
+
+/** 双升笔的结构化参数快照：庄家追踪与回退差值的重放依据（碑的折叠只用 lines）。 */
+export interface ShuangshengEntryMeta {
+	/** 本笔的庄家队（用户可在表单改写，推导尊重改写） */
+	declarerTeam: 0 | 1;
+	/** 闲家得分（0–200） */
+	defendersScore: number;
+	/** 回退（可选）：哪队被抠底 */
+	rollbackTeam?: 0 | 1;
+	/** 回退（可选）：回到第几级（0 = 打 2 … 12 = 打 A，绝对目标） */
+	rollbackToLevel?: number;
+}
 
 /** 碑：一局牌的完整账本 */
 export interface Game {
@@ -68,7 +107,7 @@ export interface Game {
 	createdAt: number;
 	templateId: TemplateId;
 	variant: Variant;
-	/** 座位序；掼蛋按 0-2 / 1-3 成队 */
+	/** 座位序；掼蛋 / 双升按 0-2 / 1-3 成队 */
 	players: PlayerRef[];
 	entries: Entry[];
 }
@@ -84,4 +123,5 @@ export type Proclamation =
 	| { kind: 'race-won'; playerId: PlayerId; threshold: number }
 	| { kind: 'eliminated'; playerId: PlayerId; threshold: number }
 	| { kind: 'last-standing'; playerId: PlayerId; threshold: number }
-	| { kind: 'level-capped'; playerId: PlayerId };
+	| { kind: 'level-capped'; playerId: PlayerId }
+	| { kind: 'cabo-finished'; playerId: PlayerId; threshold: number };

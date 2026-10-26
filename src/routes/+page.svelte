@@ -1,5 +1,5 @@
 <script lang="ts">
-	// 首页：新碑入口（四张模板卡）+ 碑林（历史）+ 拓片导入 + 设置。
+	// 首页：新碑入口（六张模板卡）+ 碑林（历史）+ 拓片导入 + 设置。
 	import { resolve } from '$app/paths';
 	import { etchState, importRubbing } from '../lib/etch/store.svelte';
 	import { unrub } from '../lib/etch/rubbing';
@@ -8,7 +8,15 @@
 	import { t, currentLang } from '../lib/i18n/i18n.svelte';
 	import SettingsSheet from '../lib/components/SettingsSheet.svelte';
 
-	const templateIds: TemplateId[] = ['generic', 'doudizhu', 'uno', 'guandan'];
+	// 顺序：通用 → UNO → CABO → 斗地主 → 掼蛋 → 双升
+	const templateIds: TemplateId[] = [
+		'generic',
+		'uno',
+		'cabo',
+		'doudizhu',
+		'guandan',
+		'shuangsheng'
+	];
 
 	let showSettings = $state(false);
 	let importMsg = $state<string | null>(null);

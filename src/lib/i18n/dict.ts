@@ -41,6 +41,10 @@ export const dict = {
 	tplUnoDesc: { zh: '剩牌计点，两种变体', en: 'Count leftover cards, two variants' },
 	tplGuandan: { zh: '掼蛋', en: 'Guandan' },
 	tplGuandanDesc: { zh: '两队爬级，过 A 封顶', en: 'Two teams climb levels to A' },
+	tplCabo: { zh: 'CABO', en: 'CABO' },
+	tplCaboDesc: { zh: '剩牌计点，到线最低胜', en: 'Count leftovers, lowest wins at the line' },
+	tplShuangsheng: { zh: '双升', en: 'Shuangsheng' },
+	tplShuangshengDesc: { zh: '闲家 80 分上台，两队爬级', en: '80 takes the deck, two teams climb' },
 
 	// 开碑
 	variant: { zh: '变体', en: 'Variant' },
@@ -54,16 +58,33 @@ export const dict = {
 	},
 	targetScore: { zh: '目标分', en: 'Target score' },
 	eliminateAt: { zh: '出局线', en: 'Elimination line' },
-	doubleDownLevels: { zh: '双下进级数', en: 'Levels per double-down' },
+	levelsAtSecond: { zh: '头游 + 二游（双下）', en: '1st + 2nd (double down)' },
+	levelsAtThird: { zh: '头游 + 三游（单下）', en: '1st + 3rd' },
+	rankLastFixed: { zh: '头游 + 末游恒 +1 级', en: '1st + last is always +1' },
+	levelsAt80: { zh: '80 分（上台）闲家升级', en: 'Defender levels at 80' },
+	levelsAt80None: { zh: '0 级 · 只换庄', en: '0 · takeover only' },
+	levelsAt80One: { zh: '1 级 · 上台占一级', en: '1 · takeover counts' },
+	defenderCap: { zh: '闲家封顶', en: 'Defender cap' },
+	capNone: { zh: '不封顶', en: 'No cap' },
+	capAt160: { zh: '封在 160 档', en: 'Cap at 160' },
+	capAt200: { zh: '封在 200 档', en: 'Cap at 200' },
+	grandWinBonus: { zh: '大光奖励（0 分升 4）', en: 'Shutout bonus (0 pts → 4)' },
+	allowRollback: { zh: '允许倒级（抠底回退）', en: 'Allow rollback (dig-back)' },
+	firstDeclarer: { zh: '首庄', en: 'First declarer' },
+	caboThreshold: { zh: '终局线（到线最低胜）', en: 'Game ends at (lowest wins)' },
 	players: { zh: '玩家', en: 'Players' },
 	playerPlaceholder: { zh: '输入名字，回车加入', en: 'Type a name, press Enter' },
-	seatHint: {
-		zh: '按座位顺序添加；掼蛋 1、3 号一队，2、4 号一队。',
-		en: 'Add in seating order; Guandan seats 1 & 3 team up, 2 & 4 team up.'
-	},
 	needPlayers: { zh: '至少 {n} 人', en: 'At least {n} players' },
 	tooManyPlayers: { zh: '至多 {n} 人', en: 'At most {n} players' },
 	teamLabel: { zh: '{n} 队', en: 'Team {n}' },
+	seatHint: {
+		zh: '按座位顺序添加。',
+		en: 'Add in seating order.'
+	},
+	seatTeamsHint: {
+		zh: '按座位顺序添加；1、3 号一队，2、4 号一队。',
+		en: 'Add in seating order; seats 1 & 3 team up, 2 & 4 team up.'
+	},
 	startTablet: { zh: '开碑', en: 'Start' },
 
 	// 碑面
@@ -81,6 +102,10 @@ export const dict = {
 	proclEliminated: { zh: '{name} 出局（{threshold} 分）', en: '{name} is out ({threshold})' },
 	proclLastStanding: { zh: '只剩 {name} 未触线', en: '{name} is the last one standing' },
 	proclLevelCapped: { zh: '{name} 过 A', en: "{name}'s team passed A" },
+	proclCaboFinished: {
+		zh: '终局：{name} 以最低分获胜（有人到 {threshold}）',
+		en: 'Game over: {name} wins lowest (someone hit {threshold})'
+	},
 	proclTitle: { zh: '宣告', en: 'Declared' },
 
 	// 刻入表单
@@ -94,7 +119,19 @@ export const dict = {
 	roundWinner: { zh: '本局出完牌', en: 'Went out this round' },
 	remainders: { zh: '剩牌点数', en: 'Cards left (points)' },
 	winningTeam: { zh: '胜队', en: 'Winning team' },
-	doubleDown: { zh: '双下', en: 'Double down' },
+	partnerRank: { zh: '同伴名次', en: "Partner's finish" },
+	rankSecond: { zh: '二游（双下）', en: '2nd (double down)' },
+	rankThird: { zh: '三游', en: '3rd' },
+	rankLast: { zh: '末游', en: 'Last' },
+	declarer: { zh: '本局庄家', en: 'Declarer' },
+	defendersScore: { zh: '闲家得分', en: "Defenders' score" },
+	previewDeclarerUp: { zh: '庄家升 {n} 级', en: 'Declarers up {n} level(s)' },
+	previewTakeover: { zh: '闲家上台，升 {n} 级', en: 'Defenders take over, up {n} level(s)' },
+	previewTakeoverNoGain: { zh: '闲家上台，只换庄', en: 'Defenders take over, no levels' },
+	rollbackToggle: { zh: '回退（抠底）', en: 'Rollback (dig-back)' },
+	rollbackTeam: { zh: '哪队回退', en: 'Which team rolls back' },
+	rollbackTo: { zh: '回到', en: 'Back to' },
+	caboCaller: { zh: '本轮叫牌 / 出完', en: 'Called Cabo / went out' },
 	checkInput: { zh: '检查一下输入。', en: 'Check the input.' },
 	errLedger: { zh: '账本拒绝了这笔：{reason}', en: 'The ledger refused this mark: {reason}' },
 

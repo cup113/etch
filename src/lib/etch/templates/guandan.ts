@@ -1,43 +1,32 @@
 // 掼蛋：队伍级数型。4 人两队（座位 0-2 / 1-3），记的是级数不是分数。
-// 笔 = 胜方每人 +N 级（普通胜 N=1，双下 N=变体 levelsPerDoubleDown，默认 2）。
+// 笔 = 胜方每人 +N 级：N 由同伴名次查变体表——二游（双下）取 levelsPerDoubleDown（默认 3），
+// 三游（单下）取 levelsPerSingleDown（默认 2，旧碑缺省回落 1），末游恒 1。
 // 级牌序列 2..A 共 13 级；过 A（级数 ≥ 13）宣告封顶。贡牌等细则后置。
 
-import type { Game, PlayerId, Proclamation, Variant } from '../types';
+import type { Game, GuandanVariant, PlayerId, Proclamation, Variant } from '../types';
 import { fold } from '../ledger';
+import { LEVEL_CAP as GUANDAN_CAP, LEVEL_NAMES as GUANDAN_LEVELS, levelName } from './levels';
+import { teamOfSeat } from './teams';
 import type { RoundResult, Template } from './index';
 
-/** 级牌名：级数 0 显示 GUANDAN_LEVELS[0]='2'，级数 12 = 'A'。过 A = 级数 ≥ 13。 */
-export const GUANDAN_LEVELS = [
-	'2',
-	'3',
-	'4',
-	'5',
-	'6',
-	'7',
-	'8',
-	'9',
-	'10',
-	'J',
-	'Q',
-	'K',
-	'A'
-] as const;
-export const GUANDAN_CAP = GUANDAN_LEVELS.length; // 13
-
-export function levelName(level: number): string {
-	return level >= GUANDAN_CAP ? '过A' : (GUANDAN_LEVELS[level] ?? '?');
-}
-
-/** 座位 i 的队：0-2 一队，1-3 一队 */
-export function teamOfSeat(seat: number): 0 | 1 {
-	return seat % 2 === 0 ? 0 : 1;
-}
+export { GUANDAN_LEVELS, GUANDAN_CAP, levelName };
+export { teamOfSeat } from './teams';
 
 export interface GuandanInput {
 	/** 获胜队伍 */
 	winningTeam: 0 | 1;
-	/** 双下（对方双游）则按变体跳级 */
-	doubleDown: boolean;
+	/** 头游同伴的名次：2 = 二游（双下）、3 = 三游（单下）、4 = 末游 */
+	partnerRank: 2 | 3 | 4;
+}
+
+/** 同伴名次 → 进级数。旧碑 levelsPerSingleDown 缺省按 1（升级前"普通胜恒 1 级"）。 */
+export function levelsForRank(
+	partnerRank: 2 | 3 | 4,
+	variant: Pick<GuandanVariant, 'levelsPerDoubleDown' | 'levelsPerSingleDown'>
+): number {
+	if (partnerRank === 2) return variant.levelsPerDoubleDown;
+	if (partnerRank === 3) return variant.levelsPerSingleDown ?? 1;
+	return 1;
 }
 
 export function guandanRound(
@@ -47,7 +36,7 @@ export function guandanRound(
 ): RoundResult {
 	if (variant.kind !== 'guandan') throw new Error('not a guandan game');
 	if (players.length !== 4) throw new Error('掼蛋需要恰好 4 人');
-	const levels = input.doubleDown ? variant.levelsPerDoubleDown : 1;
+	const levels = levelsForRank(input.partnerRank, variant);
 	const lines = players
 		.map((p, seat) => ({ p, seat }))
 		.filter(({ seat }) => teamOfSeat(seat) === input.winningTeam)
@@ -69,12 +58,13 @@ function detectGuandan(game: Game): Proclamation[] {
 	return proclamations;
 }
 
-export const guandan: Template<{ kind: 'guandan'; levelsPerDoubleDown: 1 | 2 | 3 }> = {
+export const guandan: Template<GuandanVariant> = {
 	id: 'guandan',
 	names: { zh: '掼蛋', en: 'Guandan' },
 	minPlayers: 4,
 	maxPlayers: 4,
 	teams: 'alternating-pairs',
-	defaultVariant: { kind: 'guandan', levelsPerDoubleDown: 2 },
+	// 官方默认：双下 3 级、单下 2 级；开碑页可调成房规（双下 2 / 单下 1）
+	defaultVariant: { kind: 'guandan', levelsPerDoubleDown: 3, levelsPerSingleDown: 2 },
 	detect: detectGuandan
 };
