@@ -110,15 +110,26 @@ jobs:
           APK=android/app/build/outputs/apk/release/app-release.apk
           BUILD_TOOLS=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
           "$BUILD_TOOLS/apksigner" verify --print-certs "$APK" | tee "$RUNNER_TEMP/certs.txt"
+          # 指纹行的措辞随 build-tools 版本变过：新版是
+          # "V2 Signer: certificate SHA-256 digest: ..."，旧版是
+          # "Signer #1 certificate SHA-256 digest: ..."。按固定前缀匹配会解析出空串，
+          # 而空串与"未设置变量"共用一条放行分支 —— 于是一个从没生效过的校验可以一路绿灯。
+          # 所以这里匹配任意行的指纹，并显式拒绝解析失败。
           SHA=$("$BUILD_TOOLS/apksigner" verify --print-certs "$APK" \
-            | sed -n 's/^Signer #1 certificate SHA-256 digest: //p')
-          echo "证书 SHA-256: $SHA" >> "$GITHUB_STEP_SUMMARY"
-          if [ -n "$EXPECTED_SHA256" ] && [ "$SHA" != "$EXPECTED_SHA256" ]; then
-            echo "::error::签名证书与 ANDROID_CERT_SHA256 不符 —— 这个包无法覆盖安装已有版本"
+            | sed -n 's/.*certificate SHA-256 digest: \([0-9a-fA-F]\{64\}\).*/\1/p' \
+            | head -n1 | tr -d '\r')
+          if [ -z "$SHA" ]; then
+            echo "::error::无法从 apksigner 输出解析签名指纹 —— 输出格式又变了，先修本步骤"
             exit 1
           fi
+          echo "证书 SHA-256: $SHA" >> "$GITHUB_STEP_SUMMARY"
           if [ -z "$EXPECTED_SHA256" ]; then
             echo "::warning::未设置仓库变量 ANDROID_CERT_SHA256，本次无法校验签名身份"
+            exit 0
+          fi
+          if [ "$SHA" != "$EXPECTED_SHA256" ]; then
+            echo "::error::签名证书与 ANDROID_CERT_SHA256 不符 —— 这个包无法覆盖安装已有版本"
+            exit 1
           fi
 
       - name: Attest build provenance
