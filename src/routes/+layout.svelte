@@ -23,6 +23,7 @@
 
 <svelte:head>
 	<link rel="icon" href={favicon} />
+	<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
 	<title>Etch — Scores that never vanish.</title>
 	<meta
 		name="description"

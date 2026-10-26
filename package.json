@@ -2,6 +2,8 @@
 	"name": "etch",
 	"private": true,
 	"version": "0.0.1",
+	"description": "Etch — Scores that never vanish. Offline-first scorekeeper for card tables.",
+	"license": "MIT",
 	"type": "module",
 	"scripts": {
 		"dev": "vite dev",
