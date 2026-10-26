@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background">#FFFFFF</color>
+    <!-- 自适应图标的底色，必须与 favicon 的 #1c1917 一致。
+         模板给的是 #FFFFFF，而前景是三根近白色的石色横杠（#f5f5f4）——
+         白底白杠在 API 26+ 的真机上等于没有图标。 -->
+    <color name="ic_launcher_background">#1c1917</color>
 </resources>
