@@ -13,8 +13,8 @@
 
 - **丢密钥的代价在这里被放大**：换新 key 意味着换包名，用户必须卸载旧应用才能装——而卸载会清空 IndexedDB。也就是说密钥丢失不只是发版事故，等于**用户账本丢失**，唯一退路是事先导出的拓片。因此 `.jks` 与口令必须进密码管理器并另存离线备份，"升级前先导出拓片"是文档层面必须显眼的事。
 - 密钥缺位时 `assembleRelease` **响亮失败**（`android/app/build.gradle` 里的 `taskGraph.whenReady` 守卫），绝不静默退化成未签名包：一个"能装"但没签对的包一旦被当成发行版发出去，更新签名权就等于交给了所有人。
-- `versionCode` 取 `github.run_number`（单调递增，系统拒绝 versionCode 不增的覆盖安装），`versionName` 取 tag 或 `0.0.0-dev.<run>`。
-- 仓库变量 `ANDROID_CERT_SHA256`（证书指纹是公开信息，不需要保密）用于在 CI 里断言"这次签出来的确实是那把 key"。签错的包照样能装，只是永远覆盖不了已装版本，作者常在发版当天才发现。
+- `versionCode` 取 `github.run_number`（单调递增，系统拒绝 versionCode 不增的覆盖安装），`versionName` 取 tag 或 `0.0.0-dev.<run>`。副作用：**重跑同一次 workflow 会复用同一个 `run_number`**，于是重跑产出的包与原来同 versionCode —— 用来救一次偶发失败没问题，但它不能作为"更新"覆盖同版本安装，因为系统不认为有更新。要覆盖，就再打一个 tag。
+- 仓库变量 `ANDROID_CERT_SHA256`（证书指纹是公开信息，不需要保密）用于在 CI 里断言"这次签出来的确实是那把 key"。签错的包照样能装，只是永远覆盖不了已装版本，作者常在发版当天才发现。首次发版时它还不存在（指纹只有签过一次才知道），`Verify signature` 会在缺失时给出 warning 而不是失败——拿到指纹后把它设成仓库变量，此后每次构建都会硬校验。
 - `android/` 是 `cap add android` 的模板产物，**进仓库**（可复核、无需每次生成），但 `app/src/main/assets/public` 是 `cap sync` 复制的构建产物，已忽略——所以 CI 必须先 `pnpm build` 再 `cap sync`。
 - 图标与启动图由 `scripts/android-assets.py` 从 `src/lib/assets/favicon.svg` 的几何生成（4× 超采样后降采样）；`cap add` 默认给的是 Capacitor 自己的 logo，`@capacitor/android` 还把 `colorPrimary` 定成 indigo，均在应用级资源里覆盖。
 - `navigator.vibrate` 在 Android WebView 里需要 `android.permission.VIBRATE`；缺了不报错，只是**静默无声**——触感是"刻"的手感的一半，所以这条权限是功能而非装饰。
