@@ -3,7 +3,7 @@
 	import { resolve } from '$app/paths';
 	import { etchState, importRubbing } from '../lib/etch/store.svelte';
 	import { unrub } from '../lib/etch/rubbing';
-	import { formatDate, tplDescKey, tplNameKey } from '../lib/etch/display';
+	import { formatDate, tplNameKey } from '../lib/etch/display';
 	import type { TemplateId } from '../lib/etch/types';
 	import { t, currentLang } from '../lib/i18n/i18n.svelte';
 	import SettingsSheet from '../lib/components/SettingsSheet.svelte';
@@ -65,7 +65,6 @@
 				data-testid="tpl-card-{id}"
 			>
 				<div class="text-lg font-black text-stone-950">{t(tplNameKey[id])}</div>
-				<div class="mt-1 text-xs leading-relaxed text-stone-500">{t(tplDescKey[id])}</div>
 			</a>
 		{/each}
 	</div>
@@ -118,8 +117,11 @@
 						data-testid="game-card-{g.id}"
 					>
 						<div>
-							<div class="font-bold text-stone-950">{t(tplNameKey[g.templateId])}</div>
+							<div class="font-bold text-stone-950">
+								{g.name ?? t(tplNameKey[g.templateId])}
+							</div>
 							<div class="mt-0.5 text-xs text-stone-500 tabular">
+								{#if g.name}{t(tplNameKey[g.templateId])} ·{/if}
 								{formatDate(g.createdAt, currentLang())} ·
 								{t('playersCount', { n: g.players.length })} ·
 								{t('entriesCount', { n: g.entries.filter((e) => e.kind !== 'chisel').length })}

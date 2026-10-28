@@ -105,6 +105,8 @@ export interface ShuangshengEntryMeta {
 export interface Game {
 	id: string;
 	createdAt: number;
+	/** 碑名（可选）：开碑时可写、之后可在碑务里改名；缺省显示模板名 */
+	name?: string;
 	templateId: TemplateId;
 	variant: Variant;
 	/** 座位序；掼蛋 / 双升按 0-2 / 1-3 成队 */

@@ -1,5 +1,6 @@
 <script lang="ts">
-	// 开碑：选变体 → 按座位序加玩家（combobox，名册联想/显式新建）→ 开碑进碑面。
+	// 开碑：碑名（可选）→ 选变体 → 按座位序加玩家（combobox，名册联想/显式新建）→ 开碑进碑面。
+	// 变体区只放结论式标签；机理与例子收在信息图标里（InfoHint）。
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
@@ -10,6 +11,7 @@
 	import type { Player, PlayerRef, TemplateId, Variant } from '../../../lib/etch/types';
 	import { t } from '../../../lib/i18n/i18n.svelte';
 	import PlayerCombobox from '../../../lib/components/PlayerCombobox.svelte';
+	import InfoHint from '../../../lib/components/InfoHint.svelte';
 
 	const templateId = $derived(page.params.templateId as TemplateId);
 	const template = $derived(templateOf(templateId));
@@ -26,6 +28,7 @@
 	let ssAllowRollback = $state(false);
 	let ssFirstDeclarer = $state<0 | 1>(0);
 
+	let tabletName = $state('');
 	let picked = $state<PlayerRef[]>([]);
 	let error = $state<string | null>(null);
 
@@ -76,7 +79,7 @@
 							: templateId === 'doudizhu'
 								? { kind: 'doudizhu' }
 								: { kind: 'generic' };
-		const game = await createTablet(templateId, variant, picked);
+		const game = await createTablet(templateId, variant, picked, tabletName);
 		await goto(resolve('/game/[id]', { id: game.id }));
 	}
 </script>
@@ -90,13 +93,39 @@
 	</h1>
 </header>
 
+<section class="mb-6">
+	<input
+		type="text"
+		bind:value={tabletName}
+		maxlength="20"
+		placeholder={t('tabletNamePlaceholder')}
+		data-testid="tablet-name"
+		class="w-full rounded-md border border-stone-400 bg-stone-50 px-3 py-2 text-stone-950
+			placeholder:text-stone-400 focus:border-stone-900 focus:outline-none"
+	/>
+</section>
+
 {#if templateId === 'uno'}
 	<section class="mb-6">
-		<h2 class="mb-2 text-xs font-bold tracking-widest text-stone-500 uppercase">{t('variant')}</h2>
-		<div class="space-y-2">
+		<div class="mb-2 flex flex-wrap items-center gap-1">
+			<h2 class="text-xs font-bold tracking-widest text-stone-500 uppercase">{t('variant')}</h2>
+			<InfoHint
+				label={t('infoUnoMode')}
+				testid="uno-mode"
+				table={{
+					head: [t('colMode'), t('colScoringEnd')],
+					rows: [
+						[t('unoModeRace'), t('unoRaceCell')],
+						[t('unoModeElimination'), t('unoEliminationCell')]
+					],
+					note: t('unoExample')
+				}}
+			/>
+		</div>
+		<div class="flex gap-2">
 			<button
 				type="button"
-				class="block w-full etch-chip text-left {unoMode === 'race' ? 'etch-chip-on' : ''}"
+				class="flex-1 etch-chip {unoMode === 'race' ? 'etch-chip-on' : ''}"
 				onclick={() => {
 					unoMode = 'race';
 					unoThreshold = 500;
@@ -107,7 +136,7 @@
 			</button>
 			<button
 				type="button"
-				class="block w-full etch-chip text-left {unoMode === 'elimination' ? 'etch-chip-on' : ''}"
+				class="flex-1 etch-chip {unoMode === 'elimination' ? 'etch-chip-on' : ''}"
 				onclick={() => {
 					unoMode = 'elimination';
 					unoThreshold = 300;
@@ -134,7 +163,22 @@
 	</section>
 {:else if templateId === 'guandan'}
 	<section class="mb-6">
-		<h2 class="mb-2 text-xs font-bold tracking-widest text-stone-500 uppercase">{t('variant')}</h2>
+		<div class="mb-2 flex flex-wrap items-center gap-1">
+			<h2 class="text-xs font-bold tracking-widest text-stone-500 uppercase">{t('variant')}</h2>
+			<InfoHint
+				label={t('infoGuandanRanks')}
+				testid="guandan-ranks"
+				table={{
+					head: [t('colPartnerFinish'), t('colLevels')],
+					rows: [
+						[t('rankSecond'), `+${guandanSecond}`],
+						[t('rankThird'), `+${guandanThird}`],
+						[t('rankLast'), '+1']
+					],
+					note: t('guandanNote')
+				}}
+			/>
+		</div>
 		<label class="flex items-center justify-between">
 			<span class="text-sm font-semibold text-stone-800">{t('levelsAtSecond')}</span>
 			<select
@@ -157,13 +201,28 @@
 				<option value={2}>+2</option>
 			</select>
 		</label>
-		<p class="mt-2 text-xs text-stone-400">{t('rankLastFixed')}</p>
 	</section>
 {:else if templateId === 'cabo'}
 	<section class="mb-6">
-		<h2 class="mb-2 text-xs font-bold tracking-widest text-stone-500 uppercase">{t('variant')}</h2>
-		<label class="flex items-center justify-between">
-			<span class="text-sm font-semibold text-stone-800">{t('caboThreshold')}</span>
+		<div class="mb-2 flex flex-wrap items-center gap-1">
+			<h2 class="text-xs font-bold tracking-widest text-stone-500 uppercase">{t('variant')}</h2>
+		</div>
+		<div class="flex flex-wrap items-center justify-between gap-2">
+			<span class="flex items-center gap-1 text-sm font-semibold text-stone-800">
+				{t('caboThreshold')}
+				<InfoHint
+					label={t('infoCaboThreshold')}
+					testid="cabo-threshold"
+					table={{
+						head: [t('colWho'), t('colPoints')],
+						rows: [
+							[t('caboWhoCaller'), '0'],
+							[t('caboWhoOthers'), t('caboPointsOwn')]
+						],
+						note: t('caboNote')
+					}}
+				/>
+			</span>
 			<input
 				type="number"
 				inputmode="numeric"
@@ -173,17 +232,33 @@
 				class="w-24 rounded-md border border-stone-400 bg-white px-3 py-2 text-right text-stone-950 tabular
 					focus:border-stone-900 focus:outline-none"
 			/>
-		</label>
+		</div>
 	</section>
 {:else if templateId === 'shuangsheng'}
 	<section class="mb-6">
 		<h2 class="mb-2 text-xs font-bold tracking-widest text-stone-500 uppercase">{t('variant')}</h2>
-		<div class="space-y-2">
+		<div class="space-y-3">
 			<div>
-				<div class="mb-1 text-xs font-bold tracking-wider text-stone-500 uppercase">
-					{t('levelsAt80')}
+				<div class="flex flex-wrap items-center gap-1">
+					<span class="text-xs font-bold tracking-wider text-stone-500 uppercase">
+						{t('levelsAt80')}
+					</span>
+					<InfoHint
+						label={t('infoLevelsAt80')}
+						testid="ss-levels-at-80"
+						table={{
+							head: [t('colDefenderScore'), t('levelsAt80Pick0'), t('levelsAt80Pick1')],
+							rows: [
+								['80', '0', '+1'],
+								['120', '+1', '+2'],
+								['160', '+2', '+3'],
+								['200', '+3', '+4']
+							],
+							note: t('levelsAt80Note')
+						}}
+					/>
 				</div>
-				<div class="flex gap-2">
+				<div class="mt-1 flex gap-2">
 					<button
 						type="button"
 						class="flex-1 etch-chip {ssLevelsAt80 === 0 ? 'etch-chip-on' : ''}"
@@ -202,8 +277,22 @@
 					</button>
 				</div>
 			</div>
-			<label class="flex items-center justify-between">
-				<span class="text-sm font-semibold text-stone-800">{t('defenderCap')}</span>
+			<div class="flex flex-wrap items-center justify-between gap-2">
+				<span class="flex items-center gap-1 text-sm font-semibold text-stone-800">
+					{t('defenderCap')}
+					<InfoHint
+						label={t('infoDefenderCap')}
+						testid="ss-cap"
+						table={{
+							head: [t('colCap'), t('colLimit')],
+							rows: [
+								[t('capNone'), t('capNoLimit')],
+								[t('capAt160'), t('capCeiling2')],
+								[t('capAt200'), t('capCeiling3')]
+							]
+						}}
+					/>
+				</span>
 				<select
 					bind:value={ssCap}
 					data-testid="ss-cap"
@@ -213,30 +302,51 @@
 					<option value={160}>{t('capAt160')}</option>
 					<option value={200}>{t('capAt200')}</option>
 				</select>
-			</label>
-			<label class="flex items-center gap-2 text-sm font-medium text-stone-700">
+			</div>
+			<div class="flex flex-wrap items-center justify-between gap-2">
+				<span class="flex items-center gap-1 text-sm font-medium text-stone-700">
+					{t('grandWinBonus')}
+					<InfoHint
+						label={t('infoGrandWinBonus')}
+						text={t('grandWinBonusHelp')}
+						testid="ss-grand-bonus"
+					/>
+				</span>
 				<input
 					type="checkbox"
 					bind:checked={ssGrandBonus}
 					class="h-4 w-4 rounded border-stone-400"
 					data-testid="ss-grand-bonus"
 				/>
-				{t('grandWinBonus')}
-			</label>
-			<label class="flex items-center gap-2 text-sm font-medium text-stone-700">
+			</div>
+			<div class="flex flex-wrap items-center justify-between gap-2">
+				<span class="flex items-center gap-1 text-sm font-medium text-stone-700">
+					{t('allowRollback')}
+					<InfoHint
+						label={t('infoAllowRollback')}
+						text={t('allowRollbackHelp')}
+						testid="ss-allow-rollback"
+					/>
+				</span>
 				<input
 					type="checkbox"
 					bind:checked={ssAllowRollback}
 					class="h-4 w-4 rounded border-stone-400"
 					data-testid="ss-allow-rollback"
 				/>
-				{t('allowRollback')}
-			</label>
+			</div>
 			<div>
-				<div class="mb-1 text-xs font-bold tracking-wider text-stone-500 uppercase">
-					{t('firstDeclarer')}
+				<div class="flex flex-wrap items-center gap-1">
+					<span class="text-xs font-bold tracking-wider text-stone-500 uppercase">
+						{t('firstDeclarer')}
+					</span>
+					<InfoHint
+						label={t('infoFirstDeclarer')}
+						text={t('firstDeclarerHelp')}
+						testid="ss-first-declarer"
+					/>
 				</div>
-				<div class="flex gap-2">
+				<div class="mt-1 flex gap-2">
 					<button
 						type="button"
 						class="flex-1 etch-chip {ssFirstDeclarer === 0 ? 'etch-chip-on' : ''}"

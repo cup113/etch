@@ -46,6 +46,8 @@ export function unrub(text: string): Game {
 	if (
 		typeof g.id !== 'string' ||
 		typeof g.createdAt !== 'number' ||
+		// 碑名是 v1 起的可选字段（纯增量，不升版本）：有就必须是字符串
+		(g.name !== undefined && typeof g.name !== 'string') ||
 		!['generic', 'doudizhu', 'uno', 'guandan', 'cabo', 'shuangsheng'].includes(g.templateId) ||
 		!Array.isArray(g.players) ||
 		g.players.length === 0 ||

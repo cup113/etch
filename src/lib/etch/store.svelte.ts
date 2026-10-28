@@ -32,7 +32,13 @@ export const etchState = $state<EtchState>({
 async function persistGame(game: Game): Promise<void> {
 	const plain = $state.snapshot(game) as Game;
 	await putGame(plain);
-	etchState.games = [plain, ...etchState.games.filter((g) => g.id !== plain.id)];
+	// 已存在的碑（改名、导入覆盖）原位替换：碑林按 createdAt 排序，不该被一次编辑顶到首位。
+	// 新碑（含导入的新拓片）按同一排序插入，与 loadGames 的结果保持一致。
+	if (etchState.games.some((g) => g.id === plain.id)) {
+		etchState.games = etchState.games.map((g) => (g.id === plain.id ? plain : g));
+	} else {
+		etchState.games = [...etchState.games, plain].sort((a, b) => b.createdAt - a.createdAt);
+	}
 }
 
 export async function initEtch(): Promise<void> {
@@ -52,11 +58,23 @@ export async function initEtch(): Promise<void> {
 export async function createTablet(
 	templateId: TemplateId,
 	variant: Variant,
-	players: PlayerRef[]
+	players: PlayerRef[],
+	name?: string
 ): Promise<Game> {
-	const game = newGame({ templateId, variant, players });
+	const game = newGame({ templateId, variant, players, name });
 	await persistGame(game);
 	return game;
+}
+
+/** 改名：只是碑的元数据，不触碰追加式账本（笔与折叠都不动）。空白 = 回到无名碑。 */
+export async function renameTablet(gameId: string, name: string): Promise<void> {
+	const game = etchState.games.find((g) => g.id === gameId);
+	if (!game) throw new Error(`no tablet ${gameId}`);
+	const trimmed = name.trim();
+	const next: Game = { ...game };
+	if (trimmed) next.name = trimmed;
+	else delete next.name;
+	await persistGame(next);
 }
 
 /** 刻：把一局结果（或手工行）追加为一笔。校验失败抛 LedgerError，碑不动。 */

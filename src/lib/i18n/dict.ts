@@ -32,35 +32,22 @@ export const dict = {
 	playersCount: { zh: '{n} 人', en: '{n} players' },
 	entriesCount: { zh: '{n} 笔', en: '{n} marks' },
 
-	// 模板
+	// 模板（首页卡片只留名字：说明属于开碑页与信息图标，详见 UI 准则「可见文案是成本」）
 	tplGeneric: { zh: '通用', en: 'Generic' },
-	tplGenericDesc: { zh: '想记什么记什么', en: 'Any game, any number' },
 	tplDoudizhu: { zh: '斗地主', en: 'Dou Dizhu' },
-	tplDoudizhuDesc: { zh: '底分 × 倍数，地主双份', en: 'Base × multiplier, landlord pays double' },
 	tplUno: { zh: 'UNO', en: 'UNO' },
-	tplUnoDesc: { zh: '剩牌计点，两种变体', en: 'Count leftover cards, two variants' },
 	tplGuandan: { zh: '掼蛋', en: 'Guandan' },
-	tplGuandanDesc: { zh: '两队爬级，过 A 封顶', en: 'Two teams climb levels to A' },
 	tplCabo: { zh: 'CABO', en: 'CABO' },
-	tplCaboDesc: { zh: '剩牌计点，到线最低胜', en: 'Count leftovers, lowest wins at the line' },
 	tplShuangsheng: { zh: '双升', en: 'Shuangsheng' },
-	tplShuangshengDesc: { zh: '闲家 80 分上台，两队爬级', en: '80 takes the deck, two teams climb' },
 
 	// 开碑
 	variant: { zh: '变体', en: 'Variant' },
-	unoModeRace: {
-		zh: '计分制 · 赢家收点，先到目标分',
-		en: 'Race · winner takes points, first to target'
-	},
-	unoModeElimination: {
-		zh: '出局制 · 各吃各的分，触线出局',
-		en: 'Elimination · eat your own points, cross and you are out'
-	},
+	unoModeRace: { zh: '计分制', en: 'Race' },
+	unoModeElimination: { zh: '出局制', en: 'Elimination' },
 	targetScore: { zh: '目标分', en: 'Target score' },
 	eliminateAt: { zh: '出局线', en: 'Elimination line' },
 	levelsAtSecond: { zh: '头游 + 二游（双下）', en: '1st + 2nd (double down)' },
 	levelsAtThird: { zh: '头游 + 三游（单下）', en: '1st + 3rd' },
-	rankLastFixed: { zh: '头游 + 末游恒 +1 级', en: '1st + last is always +1' },
 	levelsAt80: { zh: '80 分（上台）闲家升级', en: 'Defender levels at 80' },
 	levelsAt80None: { zh: '0 级 · 只换庄', en: '0 · takeover only' },
 	levelsAt80One: { zh: '1 级 · 上台占一级', en: '1 · takeover counts' },
@@ -71,7 +58,9 @@ export const dict = {
 	grandWinBonus: { zh: '大光奖励（0 分升 4）', en: 'Shutout bonus (0 pts → 4)' },
 	allowRollback: { zh: '允许倒级（抠底回退）', en: 'Allow rollback (dig-back)' },
 	firstDeclarer: { zh: '首庄', en: 'First declarer' },
-	caboThreshold: { zh: '终局线（到线最低胜）', en: 'Game ends at (lowest wins)' },
+	caboThreshold: { zh: '终局线', en: 'Game ends at' },
+	tabletNamePlaceholder: { zh: '碑名（可选）', en: 'Name (optional)' },
+	renameTablet: { zh: '改名', en: 'Rename' },
 	players: { zh: '玩家', en: 'Players' },
 	playerPlaceholder: { zh: '输入名字，回车加入', en: 'Type a name, press Enter' },
 	needPlayers: { zh: '至少 {n} 人', en: 'At least {n} players' },
@@ -86,6 +75,71 @@ export const dict = {
 		en: 'Add in seating order; seats 1 & 3 team up, 2 & 4 team up.'
 	},
 	startTablet: { zh: '开碑', en: 'Start' },
+
+	// 变体说明（信息图标内文）：标签只留结论；换算与对照一律用表格，一句话能说清的才写字
+	infoUnoMode: { zh: '玩法', en: 'Modes' },
+	colMode: { zh: '玩法', en: 'Mode' },
+	colScoringEnd: { zh: '记分与终局', en: 'Scores & ends' },
+	unoRaceCell: {
+		zh: '赢家收全场剩牌点；先到目标分（默认 500）胜',
+		en: 'Winner takes all leftovers; first to target (500) wins'
+	},
+	unoEliminationCell: {
+		zh: '各记自己剩牌点；到线（默认 300）出局，最后一人胜',
+		en: 'Each scores their own; crossing 300 is out, last one wins'
+	},
+	unoExample: {
+		zh: '例：乙剩 30、丙剩 12 → 计分制甲 +42；出局制乙 +30、丙 +12。',
+		en: 'E.g. B has 30 left, C 12 → race A +42; elimination B +30, C +12.'
+	},
+
+	infoGuandanRanks: { zh: '同伴名次与进级', en: 'Partner finish and levels' },
+	colPartnerFinish: { zh: '头游同伴', en: 'Partner of 1st' },
+	colLevels: { zh: '进级', en: 'Levels' },
+	guandanNote: {
+		zh: '数字可在开碑页改；级牌 2 → A，过 A 封顶。',
+		en: 'Editable here; levels run 2 → A.'
+	},
+
+	infoCaboThreshold: { zh: '终局线', en: 'Game-end line' },
+	colWho: { zh: '谁', en: 'Who' },
+	colPoints: { zh: '记分', en: 'Scores' },
+	caboWhoCaller: { zh: '出完牌或叫 Cabo', en: 'Went out or called Cabo' },
+	caboWhoOthers: { zh: '其余人', en: 'Everyone else' },
+	caboPointsOwn: { zh: '手中剩牌点', en: 'Leftover points' },
+	caboNote: {
+		zh: '有人到线（默认 100）→ 当前最低分者胜。',
+		en: 'Someone hits the line (100) → lowest score wins.'
+	},
+
+	infoLevelsAt80: { zh: '80 分升级数', en: 'Levels at 80' },
+	colDefenderScore: { zh: '闲家得分', en: 'Defenders' },
+	levelsAt80Pick0: { zh: '选 0', en: 'Pick 0' },
+	levelsAt80Pick1: { zh: '选 1', en: 'Pick 1' },
+	levelsAt80Note: { zh: '不封顶时；每多 40 分再 +1 级。', en: 'Uncapped; +1 per extra 40.' },
+
+	infoDefenderCap: { zh: '闲家封顶', en: 'Defender cap' },
+	colCap: { zh: '档位', en: 'Cap' },
+	colLimit: { zh: '上限', en: 'Ceiling' },
+	capNoLimit: { zh: '不设限', en: 'No ceiling' },
+	capCeiling2: { zh: '80 分升级数 +2', en: 'Levels at 80 + 2' },
+	capCeiling3: { zh: '80 分升级数 +3', en: 'Levels at 80 + 3' },
+
+	infoGrandWinBonus: { zh: '大光奖励', en: 'Shutout bonus' },
+	grandWinBonusHelp: {
+		zh: '闲家 0 分＝大光：庄家默认升 3 级，开启后升 4 级。',
+		en: 'Defenders on 0 = shutout: declarers +3, or +4 with this on.'
+	},
+	infoAllowRollback: { zh: '允许倒级', en: 'Allow rollback' },
+	allowRollbackHelp: {
+		zh: '抠底房规，默认关。开启后刻入表单出现「回退」：选队、选回到第几级，差值并入同一笔。\n例：打 J 被副 J 抠底 → 回到 5。',
+		en: 'Rare house rule, off by default. On, the etch form gains a rollback: pick team and level; the difference lands in the same mark.\nE.g. playing J, dug back by a trump J → back to 5.'
+	},
+	infoFirstDeclarer: { zh: '首庄', en: 'First declarer' },
+	firstDeclarerHelp: {
+		zh: '1、3 号座一队，2、4 号另一队。之后 ≥80 分换庄、<80 分连庄。',
+		en: 'Seats 1 & 3 vs 2 & 4. Then 80+ takes over, under 80 holds.'
+	},
 
 	// 碑面
 	etchNow: { zh: '刻', en: 'Etch' },
@@ -121,7 +175,7 @@ export const dict = {
 	winningTeam: { zh: '胜队', en: 'Winning team' },
 	partnerRank: { zh: '同伴名次', en: "Partner's finish" },
 	rankSecond: { zh: '二游（双下）', en: '2nd (double down)' },
-	rankThird: { zh: '三游', en: '3rd' },
+	rankThird: { zh: '三游（单下）', en: '3rd (single down)' },
 	rankLast: { zh: '末游', en: 'Last' },
 	declarer: { zh: '本局庄家', en: 'Declarer' },
 	defendersScore: { zh: '闲家得分', en: "Defenders' score" },

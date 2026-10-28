@@ -12,6 +12,7 @@ Etch 是牌桌上传着用的计分器：每一笔记分是一次**刻**，落�
 - **追加式刻痕账本**：当前分永远由全部未凿笔**折叠**得出，历史完整可查（[ADR-0001](docs/adr/0001-append-only-entry-ledger.md)）
 - **单设备离线**：数据在本机 IndexedDB；PWA 可装主屏、断网可开；跨设备靠**拓片**（版本化 JSON 导出/导入）（[ADR-0002](docs/adr/0002-local-first-single-device-no-sync.md)）
 - **六个模板**：通用、UNO、CABO、斗地主、掼蛋、双升——四种不同的规则形状，各自可配**变体**
+- **碑名**：开碑时给碑起个名、之后在碑务里改；碑林一眼认出是哪一局，无名碑回落到模板名
 - **碑不执法**：终局条件满足只**宣告**，从不锁死刻入，补局加刻永远自由
 - **中英双语**，单色高对比，落笔有"刻进去"的动效与轻微触感
 
@@ -39,6 +40,10 @@ UNO 的两种玩法是**同一个模板的两个变体**——计分方向（升
 | ------------------------------------------- | --------------------------------------------- | ------------------------------------------------ |
 | ![开碑](docs/screenshots/02-new-tablet.png) | ![碑面](docs/screenshots/04-board-scored.png) | ![凿除](docs/screenshots/06-chisel-expanded.png) |
 
+变体参数旁都有 ⓘ：标签只留结论，点开浮出一张小卡（换算与对照是表格，不占常驻版面、不推挤任何一行）。
+
+<img src="docs/screenshots/08-variant-info.png" width="420" alt="变体说明浮层" />
+
 更多截图在 [docs/screenshots/](docs/screenshots)：空碑、两笔刻痕、设置。
 
 ## 快速开始
@@ -59,7 +64,7 @@ pnpm run preview    # 本地预览构建产物
 
 ## Android APK
 
-`android/` 是 [Capacitor](https://capacitorjs.com/) 壳：`build/` 整站被复制进 APK，由 WebView 从 `https://localhost` 加载。**不是 TWA** —— 不加载远端 URL、不需要域名与 `assetlinks.json`、装完断网即用。决策与代价见 [ADR-0003](docs/adr/0003-apk-packaging-and-key-custody.md)。
+`android/` 是 [Capacitor](https://capacitorjs.com/) 壳：`build/` 整站被复制进 APK，由 WebView 从 `https://localhost` 加载。**不是 TWA** —— 不加载远端 URL、不需要域名与 `assetlinks.json`、装完断网即用。返回手势/返回键在页面栈里后退一页，回到首页再返回才退出。决策与代价见 [ADR-0003](docs/adr/0003-apk-packaging-and-key-custody.md)。
 
 本地出调试包（需要 JDK 21 + Android SDK）：
 

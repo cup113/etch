@@ -43,6 +43,39 @@ test('斗地主全流程：开碑、刻一局、刷新持久、凿除冲正、�
 	await expect(page.getByTestId('history-empty')).toBeVisible();
 });
 
+test('碑名：开碑可名、碑面可改、刷新后仍在、碑林显示', async ({ page }) => {
+	await page.goto('/');
+	await page.getByTestId('tpl-card-generic').click();
+	await page.getByTestId('tablet-name').fill('周五晚');
+	const combo = page.getByTestId('player-combobox').locator('input');
+	for (const name of ['老张', '李四']) {
+		await combo.fill(name);
+		await combo.press('Enter');
+	}
+	await page.getByTestId('start-tablet').click();
+
+	// 碑面标题 = 碑名，模板名退到副行
+	await expect(page.getByTestId('board-title')).toContainText('周五晚');
+	await expect(page.getByTestId('board-template')).toContainText('通用');
+
+	// 碑务 → 改名
+	await page.getByTestId('tablet-menu').click();
+	await page.getByTestId('rename-ask').click();
+	await page.getByTestId('rename-input').fill('周六午');
+	await page.getByTestId('rename-confirm').click();
+	await expect(page.getByTestId('board-title')).toContainText('周六午');
+
+	// 刷新后仍在（碑名随碑落盘）
+	await page.reload();
+	await expect(page.getByTestId('board-title')).toContainText('周六午');
+
+	// 碑林卡片：标题是碑名，副行带模板名
+	await page.goto('/');
+	const card = page.locator('[data-testid^="game-card-"]').first();
+	await expect(card).toContainText('周六午');
+	await expect(card).toContainText('通用');
+});
+
 test('UNO 出局制变体：宣告出局，且不锁刻入（碑不执法）', async ({ page }) => {
 	await page.goto('/');
 	await page.getByTestId('tpl-card-uno').click();

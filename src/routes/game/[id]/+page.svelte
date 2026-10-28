@@ -1,5 +1,5 @@
 <script lang="ts">
-	// 碑面：总分（刻入动效）→ 宣告 → 刻入面板 → 刻痕流（凿除）。碑务菜单：拓片导出 / 磨碑。
+	// 碑面：总分（刻入动效）→ 宣告 → 刻入面板 → 刻痕流（凿除）。碑务菜单：改名 / 拓片导出 / 磨碑。
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
@@ -7,10 +7,11 @@
 		chisel as chiselAction,
 		etch as etchAction,
 		eraseTablet,
+		renameTablet,
 		etchState
 	} from '../../../lib/etch/store.svelte';
 	import { rub } from '../../../lib/etch/rubbing';
-	import { formatDate, tplNameKey } from '../../../lib/etch/display';
+	import { formatDate, rubbingFileName, tplNameKey } from '../../../lib/etch/display';
 	import type { RoundResult } from '../../../lib/etch/templates';
 	import { haptic } from '../../../lib/etch/settings.svelte';
 	import { t, currentLang } from '../../../lib/i18n/i18n.svelte';
@@ -23,6 +24,8 @@
 
 	let menuOpen = $state(false);
 	let eraseConfirming = $state(false);
+	let renameOpen = $state(false);
+	let renameDraft = $state('');
 
 	async function onetch(round: RoundResult): Promise<void> {
 		if (!game) return;
@@ -36,13 +39,24 @@
 		haptic(12);
 	}
 
+	function openRename(): void {
+		renameDraft = game?.name ?? '';
+		renameOpen = true;
+	}
+
+	async function doRename(): Promise<void> {
+		if (!game) return;
+		await renameTablet(game.id, renameDraft);
+		renameOpen = false;
+	}
+
 	function exportRubbing(): void {
 		if (!game) return;
 		const blob = new Blob([rub(game)], { type: 'application/json' });
 		const url = URL.createObjectURL(blob);
 		const a = document.createElement('a');
 		a.href = url;
-		a.download = `etch-${formatDate(game.createdAt, currentLang()).replaceAll(' ', '')}-${game.id.slice(0, 8)}.json`;
+		a.download = rubbingFileName(game, currentLang());
 		a.click();
 		URL.revokeObjectURL(url);
 	}
@@ -61,11 +75,16 @@
 				>‹ {t('back')}</a
 			>
 			<h1 class="mt-1 text-2xl font-black tracking-tight text-stone-950" data-testid="board-title">
-				{t(tplNameKey[game.templateId])}
+				{game.name ?? t(tplNameKey[game.templateId])}
 				<span class="ml-2 text-sm font-semibold text-stone-400 tabular">
 					{formatDate(game.createdAt, currentLang())}
 				</span>
 			</h1>
+			{#if game.name}
+				<div class="mt-0.5 text-xs font-semibold text-stone-500" data-testid="board-template">
+					{t(tplNameKey[game.templateId])}
+				</div>
+			{/if}
 		</div>
 		<button
 			type="button"
@@ -83,9 +102,49 @@
 			class="mb-4 rounded-lg border border-stone-300 bg-stone-50 p-4"
 			data-testid="tablet-menu-panel"
 		>
+			{#if renameOpen}
+				<form
+					onsubmit={(e) => {
+						e.preventDefault();
+						void doRename();
+					}}
+				>
+					<input
+						type="text"
+						bind:value={renameDraft}
+						maxlength="20"
+						placeholder={t('tabletNamePlaceholder')}
+						data-testid="rename-input"
+						class="w-full rounded-md border border-stone-400 bg-white px-3 py-2 text-stone-950
+							placeholder:text-stone-400 focus:border-stone-900 focus:outline-none"
+					/>
+					<div class="mt-2 flex gap-2">
+						<button type="submit" class="etch-chip etch-chip-on" data-testid="rename-confirm">
+							{t('confirm')}
+						</button>
+						<button
+							type="button"
+							class="etch-chip"
+							onclick={() => (renameOpen = false)}
+							data-testid="rename-cancel"
+						>
+							{t('cancel')}
+						</button>
+					</div>
+				</form>
+			{:else}
+				<button
+					type="button"
+					class="block w-full etch-chip"
+					onclick={openRename}
+					data-testid="rename-ask"
+				>
+					{t('renameTablet')}
+				</button>
+			{/if}
 			<button
 				type="button"
-				class="block w-full etch-chip"
+				class="mt-2 block w-full etch-chip"
 				onclick={exportRubbing}
 				data-testid="export-rubbing"
 			>

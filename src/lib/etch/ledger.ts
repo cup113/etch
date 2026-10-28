@@ -140,11 +140,15 @@ export function newGame(input: {
 	templateId: Game['templateId'];
 	variant: Game['variant'];
 	players: { id: PlayerId; name: string }[];
+	/** 碑名（可选）；空白视为未命名，不落字段 */
+	name?: string;
 }): Game {
 	if (input.players.length === 0) throw new Error('a tablet needs players');
+	const name = input.name?.trim();
 	return {
 		id: newId(),
 		createdAt: Date.now(),
+		...(name ? { name } : {}),
 		templateId: input.templateId,
 		variant: input.variant,
 		players: input.players.map((p) => ({ ...p })),
