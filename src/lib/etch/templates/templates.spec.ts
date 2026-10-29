@@ -3,11 +3,21 @@ import { appendEntry, fold, manualEntry, newGame, newId, nextSeq, chisel } from 
 import { templateOf, templates } from './index';
 import { doudizhuRound } from './doudizhu';
 import { unoEliminationRound, unoRaceRound } from './uno';
-import { GUANDAN_CAP, guandanRound, levelName, teamOfSeat } from './guandan';
+import {
+	GUANDAN_CAP,
+	guandanRound,
+	lastFinishOf,
+	levelName,
+	partnerRankOf,
+	teamOfSeat,
+	tributeOf
+} from './guandan';
 import { caboRound } from './cabo';
 import {
 	shuangshengRound,
+	declarerFlowOf,
 	declarerTeamOf,
+	nextDealerOf,
 	teamLevelsOf,
 	type ShuangshengInput
 } from './shuangsheng';
@@ -146,25 +156,26 @@ describe('UNO：两种变体', () => {
 	});
 });
 
-describe('掼蛋：进级表与过A', () => {
-	it('同伴名次查表进级：二游 / 三游 / 末游', () => {
+describe('掼蛋：名次、进级与过A', () => {
+	it('按出完顺序查表进级：双下 / 单下 / 头游+末游', () => {
 		const g = mkGame(
 			'guandan',
 			{ kind: 'guandan', levelsPerDoubleDown: 3, levelsPerSingleDown: 2 },
 			4
 		);
-		const r2 = guandanRound({ winningTeam: 0, partnerRank: 2 }, g.players, g.variant);
+		const r2 = guandanRound({ finish: ['p1', 'p3', 'p2', 'p4'] }, g.players, g.variant);
 		expect(r2.lines).toEqual([
 			{ playerId: 'p1', delta: 3 },
 			{ playerId: 'p3', delta: 3 }
 		]);
 		expect(r2.note).toBe('+3');
-		const r3 = guandanRound({ winningTeam: 1, partnerRank: 3 }, g.players, g.variant);
+		expect(r2.meta).toEqual({ kind: 'guandan', finish: ['p1', 'p3', 'p2', 'p4'] });
+		const r3 = guandanRound({ finish: ['p1', 'p2', 'p3', 'p4'] }, g.players, g.variant);
 		expect(r3.lines).toEqual([
-			{ playerId: 'p2', delta: 2 },
-			{ playerId: 'p4', delta: 2 }
+			{ playerId: 'p1', delta: 2 },
+			{ playerId: 'p3', delta: 2 }
 		]);
-		const r4 = guandanRound({ winningTeam: 0, partnerRank: 4 }, g.players, g.variant);
+		const r4 = guandanRound({ finish: ['p1', 'p2', 'p4', 'p3'] }, g.players, g.variant);
 		expect(r4.lines).toEqual([
 			{ playerId: 'p1', delta: 1 },
 			{ playerId: 'p3', delta: 1 }
@@ -172,30 +183,39 @@ describe('掼蛋：进级表与过A', () => {
 	});
 
 	it('旧碑回落：levelsPerSingleDown 缺省按 1；旧值 1 容忍', () => {
-		// 升级前的变体形状（无 levelsPerSingleDown）——三游按旧行为 1 级
 		const g = mkGame('guandan', { kind: 'guandan', levelsPerDoubleDown: 2 }, 4);
-		const r3 = guandanRound({ winningTeam: 0, partnerRank: 3 }, g.players, g.variant);
+		const r3 = guandanRound({ finish: ['p1', 'p2', 'p3', 'p4'] }, g.players, g.variant);
 		expect(r3.lines).toEqual([
 			{ playerId: 'p1', delta: 1 },
 			{ playerId: 'p3', delta: 1 }
 		]);
 		const legacy = mkGame('guandan', { kind: 'guandan', levelsPerDoubleDown: 1 }, 4);
-		const r2 = guandanRound({ winningTeam: 0, partnerRank: 2 }, legacy.players, legacy.variant);
+		const r2 = guandanRound({ finish: ['p1', 'p3', 'p2', 'p4'] }, legacy.players, legacy.variant);
 		expect(r2.lines).toEqual([
 			{ playerId: 'p1', delta: 1 },
 			{ playerId: 'p3', delta: 1 }
 		]);
 	});
 
-	it('座位成队 0-2 / 1-3；恰好 4 人', () => {
+	it('座位成队 0-2 / 1-3；恰好 4 人；顺序必须唯一且都在碑上', () => {
 		expect([0, 1, 2, 3].map(teamOfSeat)).toEqual([0, 1, 0, 1]);
 		const g3 = mkGame(
 			'guandan',
 			{ kind: 'guandan', levelsPerDoubleDown: 2, levelsPerSingleDown: 1 },
 			3
 		);
+		expect(() => guandanRound({ finish: ['p1', 'p2', 'p3'] }, g3.players, g3.variant)).toThrow();
+		const g4 = mkGame(
+			'guandan',
+			{ kind: 'guandan', levelsPerDoubleDown: 2, levelsPerSingleDown: 1 },
+			4
+		);
+		expect(() => guandanRound({ finish: ['p1', 'p2', 'p3'] }, g4.players, g4.variant)).toThrow();
 		expect(() =>
-			guandanRound({ winningTeam: 0, partnerRank: 2 }, g3.players, g3.variant)
+			guandanRound({ finish: ['p1', 'p2', 'p3', 'p1'] }, g4.players, g4.variant)
+		).toThrow();
+		expect(() =>
+			guandanRound({ finish: ['p1', 'p2', 'p3', 'p9'] }, g4.players, g4.variant)
 		).toThrow();
 	});
 
@@ -220,6 +240,44 @@ describe('掼蛋：进级表与过A', () => {
 			{ kind: 'level-capped', playerId: 'p3' }
 		]);
 	});
+
+	it('进贡关系：双下 / 单下 / 1+4 无进贡', () => {
+		const g = mkGame('guandan', { kind: 'guandan', levelsPerDoubleDown: 3 }, 4);
+		expect(tributeOf(['p1', 'p3', 'p2', 'p4'], g.players)).toEqual({
+			kind: 'double',
+			payers: ['p2', 'p4'],
+			receivers: ['p1', 'p3']
+		});
+		expect(tributeOf(['p1', 'p2', 'p3', 'p4'], g.players)).toEqual({
+			kind: 'single',
+			payer: 'p4',
+			receiver: 'p1'
+		});
+		expect(tributeOf(['p1', 'p2', 'p4', 'p3'], g.players)).toEqual({ kind: 'none' });
+		// 队 1 的头游：同伴名次从队 1 的座位算
+		expect(partnerRankOf(['p2', 'p4', 'p1', 'p3'], g.players)).toBe(2);
+	});
+
+	it('lastFinishOf：跳过手工笔、被凿笔，最后一笔被凿回落到上一笔', () => {
+		let g = mkGame('guandan', { kind: 'guandan', levelsPerDoubleDown: 3 }, 4);
+		const round = guandanRound({ finish: ['p1', 'p3', 'p2', 'p4'] }, g.players, g.variant);
+		g = appendEntry(g, {
+			id: newId(),
+			seq: nextSeq(g),
+			ts: 1,
+			kind: 'template',
+			lines: round.lines,
+			note: round.note,
+			meta: round.meta
+		});
+		expect(lastFinishOf(g)?.finish).toEqual(['p1', 'p3', 'p2', 'p4']);
+		// 手工笔不改变“最后一局名次”
+		g = appendEntry(g, manualEntry(nextSeq(g), [{ playerId: 'p2', delta: 1 }]));
+		expect(lastFinishOf(g)?.finish).toEqual(['p1', 'p3', 'p2', 'p4']);
+		// 凿掉这一局 → 无
+		g = chisel(g, g.entries[0].id);
+		expect(lastFinishOf(g)).toBeNull();
+	});
 });
 
 describe('双升：分数换算', () => {
@@ -242,7 +300,7 @@ describe('双升：分数换算', () => {
 
 	it('庄家侧：0 分大光 3（大光奖励 4）、1–39 分 2、40–79 分 1', () => {
 		const round = (score: number, v = V()) =>
-			shuangshengRound({ declarerTeam: 0, defendersScore: score }, P4, v, L0);
+			shuangshengRound({ declarer: 'p1', defendersScore: score }, P4, v, L0);
 		expect(round(0).lines).toEqual([
 			{ playerId: 'p1', delta: 3 },
 			{ playerId: 'p3', delta: 3 }
@@ -260,7 +318,7 @@ describe('双升：分数换算', () => {
 
 	it('闲家侧：≥80 上台，N₈₀ 平移阶梯，封顶档截断', () => {
 		const gainOf = (score: number, v = V()) =>
-			shuangshengRound({ declarerTeam: 0, defendersScore: score }, P4, v, L0).lines[0].delta;
+			shuangshengRound({ declarer: 'p1', defendersScore: score }, P4, v, L0).lines[0].delta;
 		// N₈₀ = 0：80→0、120→1、160→2、200→3
 		expect(gainOf(80)).toBe(0);
 		expect(gainOf(119)).toBe(0);
@@ -278,14 +336,19 @@ describe('双升：分数换算', () => {
 	});
 
 	it('闲家上台换算给闲家队（庄家的对方），庄家胜给庄家队；80 分 0 级仍成笔', () => {
-		const takeover = shuangshengRound({ declarerTeam: 0, defendersScore: 120 }, P4, V(), L0);
+		const takeover = shuangshengRound({ declarer: 'p1', defendersScore: 120 }, P4, V(), L0);
 		expect(takeover.lines).toEqual([
 			{ playerId: 'p2', delta: 1 },
 			{ playerId: 'p4', delta: 1 }
 		]);
 		expect(takeover.note).toBe('120→X+1');
-		expect(takeover.meta).toEqual({ declarerTeam: 0, defendersScore: 120 });
-		const zero = shuangshengRound({ declarerTeam: 1, defendersScore: 80 }, P4, V(), L0);
+		expect(takeover.meta).toEqual({
+			kind: 'shuangsheng',
+			declarer: 'p1',
+			declarerTeam: 0,
+			defendersScore: 120
+		});
+		const zero = shuangshengRound({ declarer: 'p2', defendersScore: 80 }, P4, V(), L0);
 		expect(zero.lines).toEqual([
 			{ playerId: 'p1', delta: 0 },
 			{ playerId: 'p3', delta: 0 }
@@ -296,7 +359,7 @@ describe('双升：分数换算', () => {
 	it('回退：目标级差值并入同笔；变体未允许时拒绝', () => {
 		const teamLevels = { 0: 8, 1: 5 };
 		const round = shuangshengRound(
-			{ declarerTeam: 0, defendersScore: 40, rollback: { team: 1, toLevel: 3 } },
+			{ declarer: 'p1', defendersScore: 40, rollback: { team: 1, toLevel: 3 } },
 			P4,
 			V({ allowRollback: true }),
 			teamLevels
@@ -309,6 +372,8 @@ describe('双升：分数换算', () => {
 		]);
 		expect(round.note).toBe('40→D+1/R 5');
 		expect(round.meta).toEqual({
+			kind: 'shuangsheng',
+			declarer: 'p1',
 			declarerTeam: 0,
 			defendersScore: 40,
 			rollbackTeam: 1,
@@ -316,7 +381,7 @@ describe('双升：分数换算', () => {
 		});
 		expect(() =>
 			shuangshengRound(
-				{ declarerTeam: 0, defendersScore: 40, rollback: { team: 1, toLevel: 3 } },
+				{ declarer: 'p1', defendersScore: 40, rollback: { team: 1, toLevel: 3 } },
 				P4,
 				V(),
 				teamLevels
@@ -324,12 +389,15 @@ describe('双升：分数换算', () => {
 		).toThrow(/倒级/);
 	});
 
-	it('分数越界 / 非整数拒绝', () => {
+	it('分数越界 / 非整数拒绝；庄家必须在碑上', () => {
 		for (const bad of [-1, 201, 1.5]) {
 			expect(() =>
-				shuangshengRound({ declarerTeam: 0, defendersScore: bad }, P4, V(), L0)
+				shuangshengRound({ declarer: 'p1', defendersScore: bad }, P4, V(), L0)
 			).toThrow();
 		}
+		expect(() => shuangshengRound({ declarer: 'p9', defendersScore: 40 }, P4, V(), L0)).toThrow(
+			/庄家/
+		);
 	});
 });
 
@@ -363,31 +431,99 @@ describe('双升：庄家流转', () => {
 		});
 	}
 
+	it('缺省流转为轮庄；亮牌/指定不硬推', () => {
+		expect(declarerFlowOf(V())).toBe('rotate');
+		expect(declarerFlowOf(V({ declarerFlow: 'reveal' }))).toBe('reveal');
+		expect(declarerFlowOf(V({ declarerFlow: 'designate' }))).toBe('designate');
+	});
+
 	it('首庄起：连庄、上台换庄、凿除回滚、无 meta 笔跳过、改写尊重', () => {
 		let g = mkGame('shuangsheng', V(), 4);
 		expect(declarerTeamOf(g)).toBe(1);
 
-		g = etchSS(g, { declarerTeam: 1, defendersScore: 40 }); // 连庄
+		g = etchSS(g, { declarer: 'p2', defendersScore: 40 }); // 连庄，下一局轮对家 p4
 		expect(declarerTeamOf(g)).toBe(1);
+		expect(nextDealerOf(g)).toEqual({ kind: 'known', declarer: 'p4', team: 1, via: 'hold' });
 
-		g = etchSS(g, { declarerTeam: 1, defendersScore: 95 }); // 上台换庄
+		g = etchSS(g, { declarer: 'p4', defendersScore: 95 }); // 上台换庄，下一局下家 p1
 		expect(declarerTeamOf(g)).toBe(0);
+		expect(nextDealerOf(g)).toEqual({
+			kind: 'known',
+			declarer: 'p1',
+			team: 0,
+			via: 'takeover'
+		});
 
 		// 手工笔（无 meta）不改变庄家
 		g = appendEntry(g, manualEntry(nextSeq(g), [{ playerId: 'p1', delta: 1 }]));
 		expect(declarerTeamOf(g)).toBe(0);
 
-		// 凿掉上台那笔 → 庄家回到 1（重放与折叠口径一致）
+		// 凿掉上台那笔 → 回到 1（重放与折叠口径一致）
 		g = chisel(g, g.entries[1].id);
 		expect(declarerTeamOf(g)).toBe(1);
 	});
 
+	it('预指定覆盖轮庄；凿除后回滚；旧笔只知队；亮牌/指定待选', () => {
+		let g = mkGame('shuangsheng', V({ firstDeclarer: 'p2' }), 4);
+		expect(nextDealerOf(g)).toEqual({
+			kind: 'known',
+			declarer: 'p2',
+			team: 1,
+			via: 'first'
+		});
+
+		g = etchSS(g, { declarer: 'p2', defendersScore: 40, nextDeclarer: 'p1' });
+		expect(nextDealerOf(g)).toEqual({
+			kind: 'known',
+			declarer: 'p1',
+			team: 0,
+			via: 'preset'
+		});
+		const last = g.entries[g.entries.length - 1];
+		g = chisel(g, last.id);
+		expect(nextDealerOf(g)).toEqual({ kind: 'known', declarer: 'p2', team: 1, via: 'first' });
+
+		// 旧笔只有队（没有 declarer）→ team-only
+		const legacy = mkGame('shuangsheng', V(), 4);
+		const legacyGame = appendEntry(legacy, {
+			id: newId(),
+			seq: nextSeq(legacy),
+			ts: 1,
+			kind: 'template',
+			lines: [
+				{ playerId: 'p2', delta: 1 },
+				{ playerId: 'p4', delta: 1 }
+			],
+			note: '40→D+1',
+			meta: { declarerTeam: 1, defendersScore: 40 }
+		});
+		expect(nextDealerOf(legacyGame)).toEqual({ kind: 'team-only', team: 1 });
+
+		// 亮牌/指定：下一局不可推
+		const reveal = mkGame('shuangsheng', V({ declarerFlow: 'reveal' }), 4);
+		const revealGame = etchSS(reveal, { declarer: 'p2', defendersScore: 40 });
+		expect(nextDealerOf(revealGame)).toEqual({ kind: 'pending', flow: 'reveal' });
+		expect(declarerTeamOf(revealGame)).toBeNull();
+		const designate = mkGame('shuangsheng', V({ declarerFlow: 'designate' }), 4);
+		const designateGame = etchSS(designate, {
+			declarer: 'p2',
+			defendersScore: 40,
+			nextDeclarer: 'p3'
+		});
+		expect(nextDealerOf(designateGame)).toEqual({
+			kind: 'known',
+			declarer: 'p3',
+			team: 0,
+			via: 'preset'
+		});
+	});
+
 	it('表单改写庄家以该笔 meta 为准；teamLevelsOf 折叠出各队级数', () => {
 		const g = mkGame('shuangsheng', V({ firstDeclarerTeam: 0 }), 4);
-		const g2 = etchSS(g, { declarerTeam: 0, defendersScore: 10 }); // 10 分庄升 2
+		const g2 = etchSS(g, { declarer: 'p1', defendersScore: 10 }); // 10 分庄升 2
 		expect(teamLevelsOf(g2)).toEqual({ 0: 2, 1: 0 });
 		// 推导庄家仍是 0，但本笔改写成庄 1：庄 1 胜 40 分 → 队 1 +1，之后连庄
-		const g3 = etchSS(g2, { declarerTeam: 1, defendersScore: 40 });
+		const g3 = etchSS(g2, { declarer: 'p2', defendersScore: 40 });
 		expect(declarerTeamOf(g3)).toBe(1);
 		expect(teamLevelsOf(g3)).toEqual({ 0: 2, 1: 1 });
 	});
@@ -395,10 +531,10 @@ describe('双升：庄家流转', () => {
 	it('过 A 宣告封顶', () => {
 		let g = mkGame('shuangsheng', V({ firstDeclarerTeam: 0 }), 4);
 		for (let i = 0; i < 3; i++) {
-			g = etchSS(g, { declarerTeam: 0, defendersScore: 0 }); // 大光 +3 ×3 = 9
+			g = etchSS(g, { declarer: 'p1', defendersScore: 0 }); // 大光 +3 ×3 = 9
 		}
 		for (let i = 0; i < 4; i++) {
-			g = etchSS(g, { declarerTeam: 0, defendersScore: 40 }); // +1 ×4 → 13 过 A
+			g = etchSS(g, { declarer: 'p1', defendersScore: 40 }); // +1 ×4 → 13 过 A
 		}
 		expect(templateOf('shuangsheng').detect?.(g)).toEqual([
 			{ kind: 'level-capped', playerId: 'p1' },

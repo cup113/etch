@@ -4,19 +4,28 @@
 	import type { RoundResult } from '../etch/templates';
 	import { doudizhuRound } from '../etch/templates/doudizhu';
 	import { unoEliminationRound, unoRaceRound } from '../etch/templates/uno';
-	import { guandanRound } from '../etch/templates/guandan';
+	import {
+		guandanRound,
+		levelsForRank,
+		partnerRankOf,
+		tributeOf,
+		type Tribute
+	} from '../etch/templates/guandan';
 	import { caboRound } from '../etch/templates/cabo';
 	import {
+		declarerFlowOf,
 		declarerGain,
 		defenderGain,
-		declarerTeamOf,
+		nextDealerOf,
 		shuangshengRound,
 		teamLevelsOf,
 		SHUANGSHENG_MAX_SCORE
 	} from '../etch/templates/shuangsheng';
 	import { teamOfSeat } from '../etch/templates/teams';
 	import { LEVEL_NAMES } from '../etch/templates/levels';
+	import { nameOf } from '../etch/display';
 	import type { Game, PlayerId } from '../etch/types';
+	import type { DictKey } from '../i18n/dict';
 	import { t } from '../i18n/i18n.svelte';
 
 	let {
@@ -54,9 +63,8 @@
 	let remainders = $state<Record<PlayerId, Entered>>({});
 
 	// ---- 掼蛋 ----
-	let winningTeam = $state<0 | 1>(0);
-	/** 头游同伴的名次：2 二游（双下）/ 3 三游（单下）/ 4 末游 */
-	let partnerRank = $state<2 | 3 | 4>(3);
+	/** 按出完顺序点人的前三位；第 4 位自动补 */
+	let finish = $state<PlayerId[]>([]);
 
 	// ---- CABO ----
 	// svelte-ignore state_referenced_locally
@@ -64,8 +72,10 @@
 	let caboPoints = $state<Record<PlayerId, Entered>>({});
 
 	// ---- 双升 ----
-	/** 用户对本笔庄家的改写；null = 跟随账本推导（declarerTeamOf） */
-	let declarerOverride = $state<0 | 1 | null>(null);
+	/** 本局庄家；null = 跟随推导（rotate）或尚未选（reveal/designate） */
+	let declarerPick = $state<PlayerId | null>(null);
+	/** 预指定下局庄家（仅 designate 模式） */
+	let nextPick = $state<PlayerId | null>(null);
 	let defendersScore = $state<Entered>('');
 	let rollbackOn = $state(false);
 	let rollbackTeam = $state<0 | 1>(0);
@@ -77,9 +87,10 @@
 		base = '';
 		multiplier = '';
 		remainders = {};
-		partnerRank = 3;
+		finish = [];
 		caboPoints = {};
-		declarerOverride = null;
+		declarerPick = null;
+		nextPick = null;
 		defendersScore = '';
 		rollbackOn = false;
 		rollbackLevel = 0;
@@ -161,9 +172,120 @@
 		}
 	}
 
-	function submitGuandan(): void {
+	function pickFinish(id: PlayerId): void {
+		if (finish.includes(id) || finish.length >= 3) return;
+		finish = [...finish, id];
+	}
+
+	function resetFinish(): void {
+		finish = [];
+	}
+
+	/** 前三位按点击顺序；第 4 位自动补剩下的人。 */
+	const gdFinish = $derived.by(() => {
+		if (finish.length !== 3) return finish;
+		const left = game.players.find((p) => !finish.includes(p.id));
+		return left ? [...finish, left.id] : finish;
+	});
+
+	const gdPreview = $derived.by(() => {
+		if (game.variant.kind !== 'guandan' || gdFinish.length !== 4) return null;
 		try {
-			const round = guandanRound({ winningTeam, partnerRank }, game.players, game.variant);
+			const rank = partnerRankOf(gdFinish, game.players);
+			return {
+				rank,
+				levels: levelsForRank(rank, game.variant),
+				tribute: tributeOf(gdFinish, game.players)
+			};
+		} catch {
+			return null;
+		}
+	});
+
+	const gdLevelsLabel = $derived.by(() => {
+		if (!gdPreview) return null;
+		let key: DictKey;
+		if (gdPreview.rank === 2) key = 'guandanPreviewDouble';
+		else if (gdPreview.rank === 3) key = 'guandanPreviewSingle';
+		else key = 'guandanPreviewLast';
+		return t(key, { n: gdPreview.levels });
+	});
+
+	function finishLabelKey(n: number): DictKey {
+		return n === 1
+			? 'finishFirst'
+			: n === 2
+				? 'finishSecond'
+				: n === 3
+					? 'finishThird'
+					: 'finishLast';
+	}
+
+	function namesOf(ids: PlayerId[]): string {
+		return ids.map((id) => nameOf(game, id)).join('、');
+	}
+
+	function tributeLine(tribute: Tribute): string {
+		if (tribute.kind === 'double') {
+			return t('tributeDouble', {
+				payers: namesOf(tribute.payers),
+				receivers: namesOf(tribute.receivers)
+			});
+		}
+		if (tribute.kind === 'single') {
+			return t('tributeSingle', {
+				payer: nameOf(game, tribute.payer),
+				receiver: nameOf(game, tribute.receiver)
+			});
+		}
+		return t('tributeNone');
+	}
+
+	function submitGuandan(): void {
+		if (gdFinish.length !== 4) return fail(t('finishMissing'));
+		try {
+			const round = guandanRound({ finish: gdFinish }, game.players, game.variant);
+			onetch(round);
+			reset();
+		} catch (err) {
+			fail(err instanceof Error ? err.message : t('checkInput'));
+		}
+	}
+
+	const ssVariant = $derived(game.variant.kind === 'shuangsheng' ? game.variant : null);
+	const ssFlow = $derived(ssVariant ? declarerFlowOf(ssVariant) : 'rotate');
+	const ssNext = $derived(ssVariant ? nextDealerOf(game) : null);
+	const ssDealer = $derived(declarerPick ?? (ssNext?.kind === 'known' ? ssNext.declarer : null));
+
+	/** 实时换算预览：分数 → 谁升几级（不合法输入不显示） */
+	const ssPreview = $derived.by(() => {
+		if (game.variant.kind !== 'shuangsheng') return null;
+		const raw = asText(defendersScore);
+		if (raw === '') return null;
+		const n = Number(raw);
+		if (!Number.isInteger(n) || n < 0 || n > SHUANGSHENG_MAX_SCORE) return null;
+		if (n >= 80) {
+			const gain = defenderGain(n, game.variant) ?? 0;
+			return gain === 0 ? t('previewTakeoverNoGain') : t('previewTakeover', { n: gain });
+		}
+		return t('previewDeclarerUp', { n: declarerGain(n, game.variant) });
+	});
+
+	function submitShuangsheng(): void {
+		if (game.variant.kind !== 'shuangsheng') return;
+		if (!ssDealer) return fail(t('pickDeclarer'));
+		try {
+			const round = shuangshengRound(
+				{
+					declarer: ssDealer,
+					defendersScore: Number(asText(defendersScore)),
+					rollback: rollbackOn ? { team: rollbackTeam, toLevel: rollbackLevel } : undefined,
+					nextDeclarer: ssFlow === 'designate' ? (nextPick ?? undefined) : undefined
+				},
+				game.players,
+				game.variant,
+				teamLevelsOf(game)
+			);
 			onetch(round);
 			reset();
 		} catch (err) {
@@ -194,49 +316,14 @@
 		}
 	}
 
-	const ssDeclarer = $derived(
-		declarerOverride ?? (game.templateId === 'shuangsheng' ? declarerTeamOf(game) : (0 as const))
-	);
-
-	/** 实时换算预览：分数 → 谁升几级（不合法输入不显示） */
-	const ssPreview = $derived.by(() => {
-		if (game.variant.kind !== 'shuangsheng') return null;
-		const raw = asText(defendersScore);
-		if (raw === '') return null;
-		const n = Number(raw);
-		if (!Number.isInteger(n) || n < 0 || n > SHUANGSHENG_MAX_SCORE) return null;
-		if (n >= 80) {
-			const gain = defenderGain(n, game.variant) ?? 0;
-			return gain === 0 ? t('previewTakeoverNoGain') : t('previewTakeover', { n: gain });
-		}
-		return t('previewDeclarerUp', { n: declarerGain(n, game.variant) });
-	});
-
-	function submitShuangsheng(): void {
-		if (game.variant.kind !== 'shuangsheng') return;
-		try {
-			const round = shuangshengRound(
-				{
-					declarerTeam: ssDeclarer,
-					defendersScore: Number(asText(defendersScore)),
-					rollback: rollbackOn ? { team: rollbackTeam, toLevel: rollbackLevel } : undefined
-				},
-				game.players,
-				game.variant,
-				teamLevelsOf(game)
-			);
-			onetch(round);
-			reset();
-		} catch (err) {
-			fail(err instanceof Error ? err.message : t('checkInput'));
-		}
-	}
-
 	const teamMembers = $derived.by(() => {
 		const teams: Record<string, string[]> = { '0': [], '1': [] };
 		game.players.forEach((p, seat) => teams[String(teamOfSeat(seat))].push(p.name));
 		return teams;
 	});
+
+	/** 2×2 里按队分组：第一行队 0（座位 0、2），第二行队 1（座位 1、3）。 */
+	const dealerSeatOrder = [0, 2, 1, 3] as const;
 </script>
 
 <div class="rounded-lg border border-stone-300 bg-stone-50 p-4" data-testid="etch-panel">
@@ -382,55 +469,56 @@
 		<div class="space-y-3">
 			<div>
 				<div class="mb-1 text-xs font-bold tracking-wider text-stone-500 uppercase">
-					{t('winningTeam')}
+					{t('finishOrder')}
 				</div>
-				<div class="flex gap-2">
-					<button
-						type="button"
-						class="flex-1 etch-chip {winningTeam === 0 ? 'etch-chip-on' : ''}"
-						onclick={() => (winningTeam = 0)}
-						data-testid="team-0"
-					>
-						{teamMembers['0'].join(' · ')}
-					</button>
-					<button
-						type="button"
-						class="flex-1 etch-chip {winningTeam === 1 ? 'etch-chip-on' : ''}"
-						onclick={() => (winningTeam = 1)}
-						data-testid="team-1"
-					>
-						{teamMembers['1'].join(' · ')}
-					</button>
+				<div class="grid grid-cols-2 gap-2">
+					{#each [1, 2, 3, 4] as n (n)}
+						<div
+							class="flex items-center justify-between rounded-md border border-stone-300 bg-white px-3 py-2"
+							data-testid="finish-slot-{n}"
+						>
+							<span class="text-xs font-bold tracking-wider text-stone-500 uppercase">
+								{t(finishLabelKey(n))}
+							</span>
+							<span class="ml-2 truncate text-sm font-semibold text-stone-900">
+								{gdFinish[n - 1] ? nameOf(game, gdFinish[n - 1]) : '—'}
+							</span>
+						</div>
+					{/each}
 				</div>
-			</div>
-			<div>
-				<div class="mb-1 text-xs font-bold tracking-wider text-stone-500 uppercase">
-					{t('partnerRank')}
+				<div class="mt-2 grid grid-cols-2 gap-2">
+					{#each game.players as p, seat (p.id)}
+						{@const rank = gdFinish.indexOf(p.id) + 1}
+						<button
+							type="button"
+							class="etch-chip {rank ? 'etch-chip-on' : ''}"
+							disabled={rank > 0 || finish.length >= 3}
+							onclick={() => pickFinish(p.id)}
+							data-testid="finish-pick-seat-{seat}"
+						>
+							{p.name}{#if rank}<span class="ml-1 text-xs opacity-70">{rank}</span>{/if}
+						</button>
+					{/each}
 				</div>
-				<div class="flex gap-2">
+				<div class="mt-2 flex items-start justify-between gap-2">
+					{#if gdLevelsLabel}
+						<span
+							class="min-w-0 text-xs font-semibold text-stone-500"
+							data-testid="guandan-preview"
+						>
+							{gdLevelsLabel}{#if gdPreview}
+								· {tributeLine(gdPreview.tribute)}{/if}
+						</span>
+					{:else}
+						<span></span>
+					{/if}
 					<button
 						type="button"
-						class="flex-1 etch-chip {partnerRank === 2 ? 'etch-chip-on' : ''}"
-						onclick={() => (partnerRank = 2)}
-						data-testid="rank-2"
+						class="shrink-0 text-xs font-bold text-stone-500 underline"
+						onclick={resetFinish}
+						data-testid="finish-reset"
 					>
-						{t('rankSecond')}
-					</button>
-					<button
-						type="button"
-						class="flex-1 etch-chip {partnerRank === 3 ? 'etch-chip-on' : ''}"
-						onclick={() => (partnerRank = 3)}
-						data-testid="rank-3"
-					>
-						{t('rankThird')}
-					</button>
-					<button
-						type="button"
-						class="flex-1 etch-chip {partnerRank === 4 ? 'etch-chip-on' : ''}"
-						onclick={() => (partnerRank = 4)}
-						data-testid="rank-4"
-					>
-						{t('rankLast')}
+						{t('finishReset')}
 					</button>
 				</div>
 			</div>
@@ -491,23 +579,20 @@
 				<div class="mb-1 text-xs font-bold tracking-wider text-stone-500 uppercase">
 					{t('declarer')}
 				</div>
-				<div class="flex gap-2">
-					<button
-						type="button"
-						class="flex-1 etch-chip {ssDeclarer === 0 ? 'etch-chip-on' : ''}"
-						onclick={() => (declarerOverride = 0)}
-						data-testid="declarer-0"
-					>
-						{teamMembers['0'].join(' · ')}
-					</button>
-					<button
-						type="button"
-						class="flex-1 etch-chip {ssDeclarer === 1 ? 'etch-chip-on' : ''}"
-						onclick={() => (declarerOverride = 1)}
-						data-testid="declarer-1"
-					>
-						{teamMembers['1'].join(' · ')}
-					</button>
+				<div class="grid grid-cols-2 gap-2">
+					{#each dealerSeatOrder as seat (seat)}
+						{@const p = game.players[seat]}
+						{#if p}
+							<button
+								type="button"
+								class="etch-chip {ssDealer === p.id ? 'etch-chip-on' : ''}"
+								onclick={() => (declarerPick = p.id)}
+								data-testid="dealer-seat-{seat}"
+							>
+								{p.name}
+							</button>
+						{/if}
+					{/each}
 				</div>
 			</div>
 			<label>
@@ -579,6 +664,38 @@
 								</select>
 							</label>
 						</div>
+					{/if}
+				</div>
+			{/if}
+			{#if ssFlow === 'designate'}
+				<div class="rounded-md border border-stone-300 p-3">
+					<div class="mb-1 text-xs font-bold tracking-wider text-stone-500 uppercase">
+						{t('nextDeclarerOptional')}
+					</div>
+					<div class="grid grid-cols-2 gap-2">
+						{#each dealerSeatOrder as seat (seat)}
+							{@const p = game.players[seat]}
+							{#if p}
+								<button
+									type="button"
+									class="etch-chip {nextPick === p.id ? 'etch-chip-on' : ''}"
+									onclick={() => (nextPick = p.id)}
+									data-testid="next-declarer-seat-{seat}"
+								>
+									{p.name}
+								</button>
+							{/if}
+						{/each}
+					</div>
+					{#if nextPick}
+						<button
+							type="button"
+							class="mt-2 text-xs font-bold text-stone-500 underline"
+							onclick={() => (nextPick = null)}
+							data-testid="next-declarer-clear"
+						>
+							{t('nextDeclarerClear')}
+						</button>
 					{/if}
 				</div>
 			{/if}

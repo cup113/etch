@@ -2,8 +2,8 @@ import { page } from 'vitest/browser';
 import { describe, expect, it } from 'vitest';
 import { render } from 'vitest-browser-svelte';
 import EtchPanel from './EtchPanel.svelte';
-import { newGame } from '../etch/ledger';
-import { declarerTeamOf } from '../etch/templates/shuangsheng';
+import { appendEntry, newGame, newId, nextSeq } from '../etch/ledger';
+import { declarerTeamOf, shuangshengRound, teamLevelsOf } from '../etch/templates/shuangsheng';
 import type { Game, ShuangshengVariant, Variant } from '../etch/types';
 import type { RoundResult } from '../etch/templates';
 
@@ -109,35 +109,45 @@ describe('EtchPanel · UNO', () => {
 });
 
 describe('EtchPanel · 掼蛋', () => {
-	it('胜队 + 同伴名次查表进级（默认三游）', async () => {
+	it('按出完顺序点人：双下 +3，第 4 人自动补', async () => {
 		const rounds: RoundResult[] = [];
 		render(EtchPanel, {
 			game: mkGame({ kind: 'guandan', levelsPerDoubleDown: 3, levelsPerSingleDown: 2 }),
 			onetch: (r) => rounds.push(r)
 		});
 
-		// 默认三游 → +2
+		// 头游 老张、二游 王五、三游 李四；赵六自动补末游
+		await page.getByTestId('finish-pick-seat-0').click();
+		await page.getByTestId('finish-pick-seat-2').click();
+		await page.getByTestId('finish-pick-seat-1').click();
+		await expect.element(page.getByTestId('finish-slot-4')).toHaveTextContent('赵六');
+		await expect.element(page.getByTestId('guandan-preview')).toHaveTextContent('双下 +3');
+
 		await page.getByTestId('etch-submit').click();
 		expect(rounds).toEqual([
 			{
 				lines: [
-					{ playerId: 'p1', delta: 2 },
-					{ playerId: 'p3', delta: 2 }
+					{ playerId: 'p1', delta: 3 },
+					{ playerId: 'p3', delta: 3 }
 				],
-				note: '+2'
+				note: '+3',
+				meta: { kind: 'guandan', finish: ['p1', 'p3', 'p2', 'p4'] }
 			}
 		]);
+	});
 
-		// 改选二游（双下）→ +3
-		await page.getByTestId('rank-2').click();
-		await page.getByTestId('etch-submit').click();
-		expect(rounds[1]).toEqual({
-			lines: [
-				{ playerId: 'p1', delta: 3 },
-				{ playerId: 'p3', delta: 3 }
-			],
-			note: '+3'
+	it('未满四人 → 报错且不产笔', async () => {
+		const rounds: RoundResult[] = [];
+		render(EtchPanel, {
+			game: mkGame({ kind: 'guandan', levelsPerDoubleDown: 3, levelsPerSingleDown: 2 }),
+			onetch: (r) => rounds.push(r)
 		});
+
+		await page.getByTestId('finish-pick-seat-0').click();
+		await page.getByTestId('etch-submit').click();
+
+		await expect.element(page.getByTestId('etch-error')).toBeVisible();
+		expect(rounds).toEqual([]);
 	});
 });
 
@@ -190,12 +200,32 @@ describe('EtchPanel · 双升', () => {
 		...over
 	});
 
-	it('只输分数：默认庄家为推导值，40 分 → 庄家队 +1，meta 落笔', async () => {
+	/** 与 store.etch 相同的落账路径：造一笔已有账（双升 meta） */
+	function withEntry(game: Game, declarer: string, score: number): Game {
+		const round = shuangshengRound(
+			{ declarer, defendersScore: score },
+			game.players,
+			game.variant as ShuangshengVariant,
+			teamLevelsOf(game)
+		);
+		return appendEntry(game, {
+			id: newId(),
+			seq: nextSeq(game),
+			ts: 1,
+			kind: 'template',
+			lines: round.lines,
+			note: round.note,
+			meta: round.meta
+		});
+	}
+
+	it('首局必须点庄家；40 分 → 庄家队 +1，meta 落笔', async () => {
 		const game = mkGame(SS());
 		expect(declarerTeamOf(game)).toBe(0);
 		const rounds: RoundResult[] = [];
 		render(EtchPanel, { game, onetch: (r) => rounds.push(r) });
 
+		await page.getByTestId('dealer-seat-0').click();
 		await page.getByTestId('defenders-score').fill('40');
 		await page.getByTestId('etch-submit').click();
 
@@ -206,15 +236,33 @@ describe('EtchPanel · 双升', () => {
 					{ playerId: 'p3', delta: 1 }
 				],
 				note: '40→D+1',
-				meta: { declarerTeam: 0, defendersScore: 40 }
+				meta: { kind: 'shuangsheng', declarer: 'p1', declarerTeam: 0, defendersScore: 40 }
 			}
 		]);
 	});
 
-	it('95 分上台 0 级仍成笔，且预览可见', async () => {
+	it('没人可推导时必须先选庄家', async () => {
 		const rounds: RoundResult[] = [];
-		render(EtchPanel, { game: mkGame(SS()), onetch: (r) => rounds.push(r) });
+		render(EtchPanel, {
+			game: mkGame(SS({ declarerFlow: 'reveal' })),
+			onetch: (r) => rounds.push(r)
+		});
 
+		await page.getByTestId('defenders-score').fill('40');
+		await page.getByTestId('etch-submit').click();
+
+		await expect.element(page.getByTestId('etch-error')).toBeVisible();
+		expect(rounds).toEqual([]);
+	});
+
+	it('已有 40 分笔后默认对家；95 分上台 0 级仍成笔，且预览可见', async () => {
+		const rounds: RoundResult[] = [];
+		const game = withEntry(mkGame(SS()), 'p1', 40); // p1 连庄 → 下一局对家 p3
+		render(EtchPanel, { game, onetch: (r) => rounds.push(r) });
+
+		await expect.element(page.getByTestId('dealer-seat-2')).toBeVisible();
+		const seat = await page.getByTestId('dealer-seat-2').element();
+		expect(seat?.className).toContain('etch-chip-on');
 		await page.getByTestId('defenders-score').fill('95');
 		await expect.element(page.getByTestId('ss-preview')).toBeVisible();
 		await page.getByTestId('etch-submit').click();
@@ -226,7 +274,37 @@ describe('EtchPanel · 双升', () => {
 					{ playerId: 'p4', delta: 0 }
 				],
 				note: '95→X+0',
-				meta: { declarerTeam: 0, defendersScore: 95 }
+				meta: { kind: 'shuangsheng', declarer: 'p3', declarerTeam: 0, defendersScore: 95 }
+			}
+		]);
+	});
+
+	it('指定模式：下局庄家可预存', async () => {
+		const rounds: RoundResult[] = [];
+		render(EtchPanel, {
+			game: mkGame(SS({ declarerFlow: 'designate' })),
+			onetch: (r) => rounds.push(r)
+		});
+
+		await page.getByTestId('dealer-seat-0').click();
+		await page.getByTestId('defenders-score').fill('40');
+		await page.getByTestId('next-declarer-seat-3').click();
+		await page.getByTestId('etch-submit').click();
+
+		expect(rounds).toEqual([
+			{
+				lines: [
+					{ playerId: 'p1', delta: 1 },
+					{ playerId: 'p3', delta: 1 }
+				],
+				note: '40→D+1',
+				meta: {
+					kind: 'shuangsheng',
+					declarer: 'p1',
+					declarerTeam: 0,
+					defendersScore: 40,
+					nextDeclarer: 'p4'
+				}
 			}
 		]);
 	});
@@ -238,6 +316,7 @@ describe('EtchPanel · 双升', () => {
 			onetch: (r) => rounds.push(r)
 		});
 
+		await page.getByTestId('dealer-seat-1').click();
 		await page.getByTestId('defenders-score').fill('95');
 		await page.getByTestId('rollback-toggle').click();
 		await page.getByTestId('rollback-team-1').click();
@@ -255,7 +334,14 @@ describe('EtchPanel · 双升', () => {
 					{ playerId: 'p4', delta: 3 }
 				],
 				note: '95→X+0/R 5',
-				meta: { declarerTeam: 1, defendersScore: 95, rollbackTeam: 1, rollbackToLevel: 3 }
+				meta: {
+					kind: 'shuangsheng',
+					declarer: 'p2',
+					declarerTeam: 1,
+					defendersScore: 95,
+					rollbackTeam: 1,
+					rollbackToLevel: 3
+				}
 			}
 		]);
 	});

@@ -3,16 +3,20 @@
 //   闲家 0–79 分：庄家胜并升 —— 0 分（大光）3 级，大光奖励开 4 级；1–39 分 2 级；40–79 分 1 级
 //   闲家 ≥80 分：闲家上台并升 N₈₀ + ⌊(分−80)/40⌋（N₈₀ = 变体 levelsAt80，0/1），
 //                受封顶档截断（160 档 = N₈₀+2，200 档 = N₈₀+3，0 = 不封顶）
-// 庄家流转：首庄开碑时定（firstDeclarerTeam），之后每笔由账本逐笔推导（见 declarerTeamOf）；
-// ≥80 分换庄、<80 分连庄，用户在表单的改写以该笔 meta 为准。
+// 庄家：一笔记下本局坐庄的人（meta.declarer）；下一局按变体 declarerFlow 推导——
+//   rotate（轮庄）：庄家升 → 对家；庄家下台 → 下家（座位 +1，座位按出牌顺序添加）
+//   reveal（亮牌）/ designate（指定）：下一局不可推，刻入时选；designate 可在上一笔预指定
+// 优先顺序：本笔实际庄家 > 上一笔预指定 > 流转规则。旧笔只有 declarerTeam，回落为队级。
 // 允许倒级（默认关）：开启后表单可选「回退到第几级」（2..A 绝对目标，差值并入同笔）——
 // 对应抠底房规（打 J 被副 J 抠回 5、主 J 抠回 3、A 被抠回 J），罕见、不做公式推导。
 // 级牌阶梯 2..A 与掼蛋共用（levels.ts）；过 A 宣告封顶，碑不执法。
 
 import type {
+	Entry,
 	Game,
 	PlayerId,
 	Proclamation,
+	ShuangshengDeclarerFlow,
 	ShuangshengEntryMeta,
 	ShuangshengVariant
 } from '../types';
@@ -27,12 +31,14 @@ const TAKEOVER_SCORE = 80;
 const RUNG = 40;
 
 export interface ShuangshengInput {
-	/** 本笔庄家队（通常 = declarerTeamOf 推导值，用户可改写） */
-	declarerTeam: 0 | 1;
+	/** 本局坐庄的人（队由座位推出） */
+	declarer: PlayerId;
 	/** 闲家得分，0–200 整数 */
 	defendersScore: number;
 	/** 回退（仅变体 allowRollback 开启时出现）：哪队被抠底、回到第几级（0 = 打 2 … 12 = 打 A） */
 	rollback?: { team: 0 | 1; toLevel: number };
+	/** 预指定：下一局坐庄的人（仅“指定”模式） */
+	nextDeclarer?: PlayerId;
 }
 
 /** 闲家 <80 分时庄家的升级数：0 分大光 3（大光奖励 4）、1–39 分 2、40–79 分 1。 */
@@ -79,6 +85,11 @@ export function shuangshengRound(
 	if (variant.kind !== 'shuangsheng') throw new Error('not a shuangsheng game');
 	if (players.length !== 4) throw new Error('双升需要恰好 4 人');
 	assertScore(input.defendersScore);
+	const declarerSeat = players.findIndex((p) => p.id === input.declarer);
+	if (declarerSeat < 0) throw new Error('本局庄家不在碑上');
+	if (input.nextDeclarer && !players.some((p) => p.id === input.nextDeclarer)) {
+		throw new Error('下局庄家不在碑上');
+	}
 	if (input.rollback && !variant.allowRollback) {
 		throw new Error('变体未允许倒级，不能回退');
 	}
@@ -91,8 +102,9 @@ export function shuangshengRound(
 		throw new Error('回退目标级应在 2..A 之间');
 	}
 
+	const declarerTeam = teamOfSeat(declarerSeat);
 	const defendersWin = input.defendersScore >= TAKEOVER_SCORE;
-	const winnerTeam: 0 | 1 = defendersWin ? otherTeam(input.declarerTeam) : input.declarerTeam;
+	const winnerTeam: 0 | 1 = defendersWin ? otherTeam(declarerTeam) : declarerTeam;
 	const gain = defendersWin
 		? (defenderGain(input.defendersScore, variant) as number)
 		: declarerGain(input.defendersScore, variant);
@@ -112,14 +124,16 @@ export function shuangshengRound(
 
 	const side = defendersWin ? 'X' : 'D';
 	const rollbackNote = input.rollback ? `/R ${levelName(input.rollback.toLevel)}` : '';
-	const meta: ShuangshengEntryMeta = input.rollback
-		? {
-				declarerTeam: input.declarerTeam,
-				defendersScore: input.defendersScore,
-				rollbackTeam: input.rollback.team,
-				rollbackToLevel: input.rollback.toLevel
-			}
-		: { declarerTeam: input.declarerTeam, defendersScore: input.defendersScore };
+	const meta: ShuangshengEntryMeta = {
+		kind: 'shuangsheng',
+		declarer: input.declarer,
+		declarerTeam,
+		defendersScore: input.defendersScore,
+		...(input.nextDeclarer ? { nextDeclarer: input.nextDeclarer } : {}),
+		...(input.rollback
+			? { rollbackTeam: input.rollback.team, rollbackToLevel: input.rollback.toLevel }
+			: {})
+	};
 
 	return {
 		lines: [...deltas.entries()].map(([playerId, delta]) => ({ playerId, delta })),
@@ -128,20 +142,100 @@ export function shuangshengRound(
 	};
 }
 
-/** 当前庄家队：从首庄起逐笔重放未凿笔的 meta——≥80 换庄、<80 连庄；无 meta 的笔（手工等）跳过。 */
-export function declarerTeamOf(game: Game): 0 | 1 {
+/** 下一局庄家的解析结果：known = 人和队；team-only = 只知队（旧碑）；pending = 亮牌/指定局待选。 */
+export type NextDealer =
+	| {
+			kind: 'known';
+			declarer: PlayerId;
+			team: 0 | 1;
+			via: 'first' | 'hold' | 'takeover' | 'preset';
+	  }
+	| { kind: 'team-only'; team: 0 | 1 }
+	| { kind: 'pending'; flow: 'reveal' | 'designate' };
+
+/** 变体的庄家流转；缺省/未知值一律按 rotate（旧碑兼容）。 */
+export function declarerFlowOf(variant: ShuangshengVariant): ShuangshengDeclarerFlow {
+	return variant.declarerFlow === 'reveal' || variant.declarerFlow === 'designate'
+		? variant.declarerFlow
+		: 'rotate';
+}
+
+/** 笔的双升 meta；旧笔无 kind 也按双升读。 */
+export function shuangshengMeta(entry: Entry): ShuangshengEntryMeta | null {
+	const meta = entry.meta;
+	if (!meta || meta.kind === 'guandan') return null;
+	return meta;
+}
+
+/**
+ * 下一局庄家：从首庄起逐笔重放未凿笔的 meta。
+ * 优先顺序：本笔实际庄家 > 上一笔预指定 > 流转规则；旧笔无人则只知队。
+ */
+export function nextDealerOf(game: Game): NextDealer {
 	const variant = game.variant;
 	if (variant.kind !== 'shuangsheng') throw new Error('not a shuangsheng game');
-	let declarer = variant.firstDeclarerTeam;
+	const players = game.players;
+	const seatOf = (id: PlayerId): number => players.findIndex((p) => p.id === id);
+
+	let team: 0 | 1 = variant.firstDeclarerTeam;
+	let declarer: PlayerId | undefined;
+	let via: 'first' | 'hold' | 'takeover' | 'preset' = 'first';
+	if (variant.firstDeclarer) {
+		const seat = seatOf(variant.firstDeclarer);
+		if (seat >= 0 && teamOfSeat(seat) === variant.firstDeclarerTeam) {
+			declarer = variant.firstDeclarer;
+		}
+	}
+
 	for (const e of game.entries) {
 		if (e.kind === 'chisel' || isChiseled(game, e.id)) continue;
-		if (!e.meta) continue;
-		declarer =
-			e.meta.defendersScore >= TAKEOVER_SCORE
-				? otherTeam(e.meta.declarerTeam)
-				: e.meta.declarerTeam;
+		const meta = shuangshengMeta(e);
+		if (!meta) continue;
+
+		team = meta.declarerTeam;
+		declarer = undefined;
+		if (meta.declarer) {
+			const seat = seatOf(meta.declarer);
+			if (seat >= 0 && teamOfSeat(seat) === meta.declarerTeam) declarer = meta.declarer;
+		}
+
+		const flip = meta.defendersScore >= TAKEOVER_SCORE;
+		let nextDeclarer: PlayerId | undefined;
+		if (declarer) {
+			const seat = seatOf(declarer);
+			const nextSeat = flip ? (seat + 1) % 4 : (seat + 2) % 4;
+			nextDeclarer = players[nextSeat]?.id;
+		}
+		let nextVia: 'first' | 'hold' | 'takeover' | 'preset' = flip ? 'takeover' : 'hold';
+		if (meta.nextDeclarer) {
+			const seat = seatOf(meta.nextDeclarer);
+			if (seat >= 0) {
+				nextDeclarer = meta.nextDeclarer;
+				nextVia = 'preset';
+			}
+		}
+		team = nextDeclarer ? teamOfSeat(seatOf(nextDeclarer)) : flip ? otherTeam(team) : team;
+		declarer = nextDeclarer;
+		via = nextVia;
 	}
-	return declarer;
+
+	const flow = declarerFlowOf(variant);
+	if (flow === 'rotate') {
+		return declarer
+			? { kind: 'known', declarer, team: teamOfSeat(seatOf(declarer)), via }
+			: { kind: 'team-only', team };
+	}
+	// 亮牌/指定局：只有首庄或上一笔预指定才称得上“知道下一局”
+	if (declarer && (via === 'first' || via === 'preset')) {
+		return { kind: 'known', declarer, team: teamOfSeat(seatOf(declarer)), via };
+	}
+	return { kind: 'pending', flow };
+}
+
+/** 当前（下一笔）庄家队；pending（亮牌/指定且未选）返回 null。 */
+export function declarerTeamOf(game: Game): 0 | 1 | null {
+	const next = nextDealerOf(game);
+	return next.kind === 'pending' ? null : next.team;
 }
 
 /** 各队当前级数（折叠）：取每队首位座位的合计（同队两人级数恒相同）。 */
@@ -177,7 +271,8 @@ export const shuangsheng: Template<ShuangshengVariant> = {
 		defenderCapScore: 0,
 		grandWinBonus: false,
 		allowRollback: false,
-		firstDeclarerTeam: 0
+		firstDeclarerTeam: 0,
+		declarerFlow: 'rotate'
 	},
 	detect: detectShuangsheng
 };

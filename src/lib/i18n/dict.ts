@@ -58,6 +58,10 @@ export const dict = {
 	grandWinBonus: { zh: '大光奖励（0 分升 4）', en: 'Shutout bonus (0 pts → 4)' },
 	allowRollback: { zh: '允许倒级（抠底回退）', en: 'Allow rollback (dig-back)' },
 	firstDeclarer: { zh: '首庄', en: 'First declarer' },
+	declarerFlow: { zh: '庄家流转', en: 'Dealer flow' },
+	declarerFlowRotate: { zh: '轮庄', en: 'Rotation' },
+	declarerFlowReveal: { zh: '亮牌', en: 'Reveal' },
+	declarerFlowDesignate: { zh: '指定', en: 'Designate' },
 	caboThreshold: { zh: '终局线', en: 'Game ends at' },
 	tabletNamePlaceholder: { zh: '碑名（可选）', en: 'Name (optional)' },
 	renameTablet: { zh: '改名', en: 'Rename' },
@@ -71,8 +75,8 @@ export const dict = {
 		en: 'Add in seating order.'
 	},
 	seatTeamsHint: {
-		zh: '按座位顺序添加；1、3 号一队，2、4 号一队。',
-		en: 'Add in seating order; seats 1 & 3 team up, 2 & 4 team up.'
+		zh: '按出牌顺序添加；1、3 号一队，2、4 号一队；下一位是下家。',
+		en: 'Add in play order; seats 1 & 3 team up, 2 & 4 team up; the next seat is the next player.'
 	},
 	startTablet: { zh: '开碑', en: 'Start' },
 
@@ -137,8 +141,45 @@ export const dict = {
 	},
 	infoFirstDeclarer: { zh: '首庄', en: 'First declarer' },
 	firstDeclarerHelp: {
-		zh: '1、3 号座一队，2、4 号另一队。之后 ≥80 分换庄、<80 分连庄。',
-		en: 'Seats 1 & 3 vs 2 & 4. Then 80+ takes over, under 80 holds.'
+		zh: '第一局坐庄的人；可留空，刻入时再选。座位按出牌顺序添加。',
+		en: 'Who deals the first hand; leave blank and pick when etching. Seats are added in play order.'
+	},
+
+	infoDeclarerFlow: { zh: '庄家流转', en: 'Dealer flow' },
+	colFlow: { zh: '玩法', en: 'Mode' },
+	colNextDealer: { zh: '下一局庄家', en: 'Next dealer' },
+	declarerFlowRotateCell: {
+		zh: '升 → 对家；下台 → 下家',
+		en: 'Win → partner; lose → next seat'
+	},
+	declarerFlowRevealCell: {
+		zh: '每局亮牌后选',
+		en: 'Pick after the reveal each hand'
+	},
+	declarerFlowDesignateCell: {
+		zh: '可提前存在上一笔',
+		en: 'Can be pre-set on the previous mark'
+	},
+	declarerFlowNote: {
+		zh: '座位按出牌顺序添加，下一位即下家。',
+		en: 'Seats are added in play order; the next seat is the next player.'
+	},
+
+	infoTribute: { zh: '进贡', en: 'Tribute' },
+	colSituation: { zh: '局面', en: 'Situation' },
+	colTribute: { zh: '进贡', en: 'Tribute' },
+	tributeDoubleCell: {
+		zh: '三游、末游各进贡；头游收大牌',
+		en: '3rd & last each give; 1st takes the higher'
+	},
+	tributeDoubleDown: { zh: '双下（头游+二游）', en: 'Double down (1st + 2nd)' },
+	tributeSingleDown: { zh: '单下（头游+三游）', en: 'Single down (1st + 3rd)' },
+	tributeOneFour: { zh: '头游+末游', en: '1st + last' },
+	tributeSingleCell: { zh: '末游 → 头游', en: 'Last → 1st' },
+	tributeLastCell: { zh: '无进贡', en: 'None' },
+	tributeNote: {
+		zh: '还贡 ≤10；失方双大王可抗贡（头游先出）；单下末游先出，双下贡大者先出。',
+		en: 'Return ≤10; two jokers let the losing side refuse (1st leads); single: last leads; double: higher giver leads.'
 	},
 
 	// 碑面
@@ -162,6 +203,32 @@ export const dict = {
 	},
 	proclTitle: { zh: '宣告', en: 'Declared' },
 
+	// 下一局条（由未凿笔 + 变体推导，不是存储状态）
+	dealerThisRound: { zh: '本局 · {name} 做庄', en: 'This hand · {name} deals' },
+	dealerNextRound: { zh: '下一局 · {name} 做庄', en: 'Next hand · {name} deals' },
+	dealerTeamOnly: {
+		zh: '下一局 · {teams} 队（庄家待定）',
+		en: 'Next hand · {teams} (dealer unnamed)'
+	},
+	dealerReveal: { zh: '下一局 · 亮牌定庄', en: 'Next hand · dealer by reveal' },
+	dealerDesignate: { zh: '下一局 · 待指定', en: 'Next hand · dealer to be named' },
+	lastRound: {
+		zh: '上局 · ① {first} ② {second} ③ {third} ④ {last}',
+		en: 'Last · ① {first} ② {second} ③ {third} ④ {last}'
+	},
+	tributeDouble: {
+		zh: '下一局进贡 · {payers} → {receivers}（头游收大牌）',
+		en: 'Next tribute · {payers} → {receivers} (1st takes the higher card)'
+	},
+	tributeSingle: {
+		zh: '下一局进贡 · {payer} → {receiver}',
+		en: 'Next tribute · {payer} → {receiver}'
+	},
+	tributeNone: {
+		zh: '下一局进贡 · 无（末游在胜方）',
+		en: 'Next tribute · none (last place is on the winning side)'
+	},
+
 	// 刻入表单
 	amount: { zh: '数值', en: 'Amount' },
 	toWhom: { zh: '给谁', en: 'To whom' },
@@ -172,12 +239,29 @@ export const dict = {
 	multiplier: { zh: '倍数', en: 'Multiplier' },
 	roundWinner: { zh: '本局出完牌', en: 'Went out this round' },
 	remainders: { zh: '剩牌点数', en: 'Cards left (points)' },
-	winningTeam: { zh: '胜队', en: 'Winning team' },
-	partnerRank: { zh: '同伴名次', en: "Partner's finish" },
 	rankSecond: { zh: '二游（双下）', en: '2nd (double down)' },
 	rankThird: { zh: '三游（单下）', en: '3rd (single down)' },
 	rankLast: { zh: '末游', en: 'Last' },
 	declarer: { zh: '本局庄家', en: 'Declarer' },
+	pickDeclarer: { zh: '选一下本局庄家。', en: 'Pick this hand’s declarer.' },
+	nextDeclarerOptional: { zh: '下局庄家（可留空）', en: 'Next dealer (optional)' },
+	nextDeclarerClear: { zh: '留空', en: 'Clear' },
+	finishOrder: { zh: '出完顺序', en: 'Finish order' },
+	finishFirst: { zh: '头游', en: '1st' },
+	finishSecond: { zh: '二游', en: '2nd' },
+	finishThird: { zh: '三游', en: '3rd' },
+	finishLast: { zh: '末游', en: 'Last' },
+	finishMissing: { zh: '点满四个人。', en: 'Tap all four players.' },
+	finishReset: { zh: '重排', en: 'Reset' },
+	guandanPreviewDouble: { zh: '双下 +{n}', en: 'Double down +{n}' },
+	guandanPreviewSingle: { zh: '单下 +{n}', en: 'Single down +{n}' },
+	guandanPreviewLast: { zh: '头游+末游 +{n}', en: '1st + last +{n}' },
+	entryDealer: { zh: '庄 {name}', en: 'Dealer {name}' },
+	entryNextDealer: { zh: '下局 {name}', en: 'Next {name}' },
+	entryFinish: {
+		zh: '① {first} · ② {second} · ③ {third} · ④ {last}',
+		en: '① {first} · ② {second} · ③ {third} · ④ {last}'
+	},
 	defendersScore: { zh: '闲家得分', en: "Defenders' score" },
 	previewDeclarerUp: { zh: '庄家升 {n} 级', en: 'Declarers up {n} level(s)' },
 	previewTakeover: { zh: '闲家上台，升 {n} 级', en: 'Defenders take over, up {n} level(s)' },

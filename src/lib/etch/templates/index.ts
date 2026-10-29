@@ -1,8 +1,7 @@
 // 模板注册表与模板契约。模板 = 规则形状 + 变体参数（CONTEXT.md），不是规则引擎：
 // 每个模板只提供"一局结果 → 笔的行"的计算函数与终局检测，碑不执法。
 
-import type { Game, PlayerId, Proclamation, TemplateId, Variant } from '../types';
-import type { ShuangshengEntryMeta } from '../types';
+import type { EntryMeta, Game, PlayerId, Proclamation, TemplateId, Variant } from '../types';
 import { generic } from './generic';
 import { doudizhu } from './doudizhu';
 import { uno } from './uno';
@@ -10,12 +9,12 @@ import { guandan } from './guandan';
 import { cabo } from './cabo';
 import { shuangsheng } from './shuangsheng';
 
-/** 模板一局的输入：摊好的增减行 + 参数快照文本 + 可选结构化快照（双升庄家追踪） */
+/** 模板一局的输入：摊好的增减行 + 参数快照文本 + 可选结构化快照（双升庄家 / 掼蛋名次） */
 export interface RoundResult {
 	lines: { playerId: PlayerId; delta: number }[];
 	note?: string;
-	/** 结构化参数快照，透传到笔（Entry.meta）；目前仅双升使用 */
-	meta?: ShuangshengEntryMeta;
+	/** 结构化参数快照，透传到笔（Entry.meta） */
+	meta?: EntryMeta;
 }
 
 export interface Template<V extends Variant = Variant> {

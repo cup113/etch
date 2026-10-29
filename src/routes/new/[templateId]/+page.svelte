@@ -8,7 +8,14 @@
 	import { templateOf } from '../../../lib/etch/templates';
 	import { teamOfSeat } from '../../../lib/etch/templates/teams';
 	import { tplNameKey } from '../../../lib/etch/display';
-	import type { Player, PlayerRef, TemplateId, Variant } from '../../../lib/etch/types';
+	import type {
+		Player,
+		PlayerId,
+		PlayerRef,
+		ShuangshengDeclarerFlow,
+		TemplateId,
+		Variant
+	} from '../../../lib/etch/types';
 	import { t } from '../../../lib/i18n/i18n.svelte';
 	import PlayerCombobox from '../../../lib/components/PlayerCombobox.svelte';
 	import InfoHint from '../../../lib/components/InfoHint.svelte';
@@ -26,7 +33,9 @@
 	let ssCap = $state<160 | 200 | 0>(0);
 	let ssGrandBonus = $state(false);
 	let ssAllowRollback = $state(false);
-	let ssFirstDeclarer = $state<0 | 1>(0);
+	let ssDeclarerFlow = $state<ShuangshengDeclarerFlow>('rotate');
+	/** 首庄（人）；留空则在第一笔刻入时选 */
+	let ssFirstDeclarer = $state<PlayerId | null>(null);
 
 	let tabletName = $state('');
 	let picked = $state<PlayerRef[]>([]);
@@ -43,7 +52,9 @@
 	}
 
 	function removeAt(i: number): void {
+		const removed = picked[i];
 		picked = picked.filter((_, idx) => idx !== i);
+		if (removed && ssFirstDeclarer === removed.id) ssFirstDeclarer = null;
 	}
 
 	async function start(): Promise<void> {
@@ -52,6 +63,8 @@
 			error = t('needPlayers', { n: template.minPlayers });
 			return;
 		}
+		const ssFirstSeat = picked.findIndex((p) => p.id === ssFirstDeclarer);
+		const ssFirstTeam = ssFirstSeat >= 0 ? teamOfSeat(ssFirstSeat) : 0;
 		const variant: Variant =
 			templateId === 'uno'
 				? {
@@ -74,7 +87,9 @@
 									defenderCapScore: ssCap,
 									grandWinBonus: ssGrandBonus,
 									allowRollback: ssAllowRollback,
-									firstDeclarerTeam: ssFirstDeclarer
+									firstDeclarerTeam: ssFirstTeam,
+									declarerFlow: ssDeclarerFlow,
+									...(ssFirstSeat >= 0 ? { firstDeclarer: picked[ssFirstSeat].id } : {})
 								}
 							: templateId === 'doudizhu'
 								? { kind: 'doudizhu' }
@@ -338,30 +353,46 @@
 			<div>
 				<div class="flex flex-wrap items-center gap-1">
 					<span class="text-xs font-bold tracking-wider text-stone-500 uppercase">
-						{t('firstDeclarer')}
+						{t('declarerFlow')}
 					</span>
 					<InfoHint
-						label={t('infoFirstDeclarer')}
-						text={t('firstDeclarerHelp')}
-						testid="ss-first-declarer"
+						label={t('infoDeclarerFlow')}
+						testid="ss-declarer-flow"
+						table={{
+							head: [t('colFlow'), t('colNextDealer')],
+							rows: [
+								[t('declarerFlowRotate'), t('declarerFlowRotateCell')],
+								[t('declarerFlowReveal'), t('declarerFlowRevealCell')],
+								[t('declarerFlowDesignate'), t('declarerFlowDesignateCell')]
+							],
+							note: t('declarerFlowNote')
+						}}
 					/>
 				</div>
 				<div class="mt-1 flex gap-2">
 					<button
 						type="button"
-						class="flex-1 etch-chip {ssFirstDeclarer === 0 ? 'etch-chip-on' : ''}"
-						onclick={() => (ssFirstDeclarer = 0)}
-						data-testid="ss-first-0"
+						class="flex-1 etch-chip {ssDeclarerFlow === 'rotate' ? 'etch-chip-on' : ''}"
+						onclick={() => (ssDeclarerFlow = 'rotate')}
+						data-testid="ss-flow-rotate"
 					>
-						{t('teamLabel', { n: 1 })}
+						{t('declarerFlowRotate')}
 					</button>
 					<button
 						type="button"
-						class="flex-1 etch-chip {ssFirstDeclarer === 1 ? 'etch-chip-on' : ''}"
-						onclick={() => (ssFirstDeclarer = 1)}
-						data-testid="ss-first-1"
+						class="flex-1 etch-chip {ssDeclarerFlow === 'reveal' ? 'etch-chip-on' : ''}"
+						onclick={() => (ssDeclarerFlow = 'reveal')}
+						data-testid="ss-flow-reveal"
 					>
-						{t('teamLabel', { n: 2 })}
+						{t('declarerFlowReveal')}
+					</button>
+					<button
+						type="button"
+						class="flex-1 etch-chip {ssDeclarerFlow === 'designate' ? 'etch-chip-on' : ''}"
+						onclick={() => (ssDeclarerFlow = 'designate')}
+						data-testid="ss-flow-designate"
+					>
+						{t('declarerFlowDesignate')}
 					</button>
 				</div>
 			</div>
@@ -410,6 +441,36 @@
 		{/each}
 	</ol>
 </section>
+
+{#if templateId === 'shuangsheng' && picked.length === 4}
+	<section class="mb-6">
+		<div class="mb-2 flex flex-wrap items-center gap-1">
+			<h2 class="text-xs font-bold tracking-widest text-stone-500 uppercase">
+				{t('firstDeclarer')}
+			</h2>
+			<InfoHint
+				label={t('infoFirstDeclarer')}
+				text={t('firstDeclarerHelp')}
+				testid="ss-first-declarer"
+			/>
+		</div>
+		<div class="grid grid-cols-2 gap-2">
+			{#each [0, 2, 1, 3] as seat (seat)}
+				{@const p = picked[seat]}
+				{#if p}
+					<button
+						type="button"
+						class="etch-chip {ssFirstDeclarer === p.id ? 'etch-chip-on' : ''}"
+						onclick={() => (ssFirstDeclarer = p.id)}
+						data-testid="first-declarer-seat-{seat}"
+					>
+						{p.name}
+					</button>
+				{/if}
+			{/each}
+		</div>
+	</section>
+{/if}
 
 {#if error}
 	<p class="mb-3 text-sm font-semibold text-stone-700" data-testid="new-error">{error}</p>

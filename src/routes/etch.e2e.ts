@@ -155,10 +155,46 @@ test('语言切换：中英双语即时生效', async ({ page }) => {
 	await page.getByTestId('settings-close').click();
 });
 
-test('双升：只输闲家分数，庄家升 1 级后连庄，级牌显示', async ({ page }) => {
+test('双升：首庄可先选，刻完显示下一局庄家，刷新仍在，凿除回滚', async ({ page }) => {
 	await page.goto('/');
 	await page.getByTestId('tpl-card-shuangsheng').click();
-	// 默认变体：80 分升级数 0、不封顶、无大光奖励、无倒级、首庄 1 队
+	// 默认变体：80 分升级数 0、不封顶、无大光奖励、无倒级、轮庄
+	const combo = page.getByTestId('player-combobox').locator('input');
+	for (const name of ['甲', '乙', '丙', '丁']) {
+		await combo.fill(name);
+		await combo.press('Enter');
+	}
+	// 首庄先选甲（第一局）
+	await page.getByTestId('first-declarer-seat-0').click();
+	await page.getByTestId('start-tablet').click();
+	await expect(page.getByTestId('board-title')).toBeVisible();
+
+	// 首笔：闲家 40 分 → 庄家队（甲·丙）各 +1 级；下一局轮对家丙
+	await page.getByTestId('defenders-score').fill('40');
+	await page.getByTestId('etch-submit').click();
+	await expect(page.getByTestId('totals')).toContainText('3');
+	await expect(page.getByTestId('next-dealer')).toContainText('下一局 · 丙 做庄');
+
+	// 刷新：下一局庄家仍在（账本推导，不是内存状态）
+	await page.reload();
+	await expect(page.getByTestId('next-dealer')).toContainText('下一局 · 丙 做庄');
+
+	// 第二笔：闲家 120 分 → 闲家队上台 +1；下一局换到丙的下家丁
+	await page.getByTestId('defenders-score').fill('120');
+	await page.getByTestId('etch-submit').click();
+	await expect(page.getByTestId('totals')).toContainText('3');
+	await expect(page.getByTestId('next-dealer')).toContainText('下一局 · 丁 做庄');
+
+	// 凿掉第二笔 → 下一局回到丙
+	await page.getByTestId('entries').getByText('+1 乙').click();
+	await page.getByRole('button', { name: '凿除' }).first().click(); // 展开确认
+	await page.getByRole('button', { name: '凿除' }).first().click(); // 确认凿除
+	await expect(page.getByTestId('next-dealer')).toContainText('下一局 · 丙 做庄');
+});
+
+test('掼蛋：按出完顺序记名次，推下一局进贡；刷新仍在；凿除回滚', async ({ page }) => {
+	await page.goto('/');
+	await page.getByTestId('tpl-card-guandan').click();
 	const combo = page.getByTestId('player-combobox').locator('input');
 	for (const name of ['甲', '乙', '丙', '丁']) {
 		await combo.fill(name);
@@ -167,18 +203,26 @@ test('双升：只输闲家分数，庄家升 1 级后连庄，级牌显示', as
 	await page.getByTestId('start-tablet').click();
 	await expect(page.getByTestId('board-title')).toBeVisible();
 
-	// 首笔：闲家 40 分 → 庄家队（甲·丙）各 +1 级：2 → 3
-	await page.getByTestId('defenders-score').fill('40');
+	// 双下：甲头游、丙二游、乙三游、丁自动补末游 → +3
+	await page.getByTestId('finish-pick-seat-0').click();
+	await page.getByTestId('finish-pick-seat-2').click();
+	await page.getByTestId('finish-pick-seat-1').click();
+	await expect(page.getByTestId('finish-slot-4')).toContainText('丁');
 	await page.getByTestId('etch-submit').click();
-	await expect(page.getByTestId('totals')).toContainText('3');
-	await expect(page.getByTestId('totals')).toContainText('2');
 
-	// 第二笔：闲家 120 分 → 闲家队（乙·丁）上台 +1 级，且下一笔庄家自动切到乙·丁
-	await page.getByTestId('defenders-score').fill('120');
-	await page.getByTestId('etch-submit').click();
-	await expect(page.getByTestId('totals')).toContainText('3');
-	// 庄家 chips 里乙·丁 那颗高亮（class etch-chip-on）
-	await expect(page.getByTestId('declarer-1')).toHaveClass(/etch-chip-on/);
+	await expect(page.getByTestId('totals')).toContainText('Lv 3');
+	await expect(page.getByTestId('last-finish')).toContainText('① 甲 ② 丙 ③ 乙 ④ 丁');
+	await expect(page.getByTestId('tribute')).toContainText('乙、丁 → 甲、丙');
+
+	// 刷新：名次与进贡仍在
+	await page.reload();
+	await expect(page.getByTestId('last-finish')).toContainText('① 甲 ② 丙 ③ 乙 ④ 丁');
+
+	// 凿掉这一局 → 条消失
+	await page.getByTestId('entries').getByText('+3 甲').click();
+	await page.getByRole('button', { name: '凿除' }).first().click();
+	await page.getByRole('button', { name: '凿除' }).first().click();
+	await expect(page.getByTestId('round-setup')).toBeHidden();
 });
 
 test('CABO：小门槛宣告最低胜，碑不执法仍可刻', async ({ page }) => {

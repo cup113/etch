@@ -3,6 +3,8 @@
 	// 点击一笔展开凿除（两步确认，不弹系统对话框）。
 	import { isChiseled, roundOf } from '../etch/ledger';
 	import { nameOf, signed } from '../etch/display';
+	import { guandanMeta } from '../etch/templates/guandan';
+	import { shuangshengMeta } from '../etch/templates/shuangsheng';
 	import type { Game } from '../etch/types';
 	import { t } from '../i18n/i18n.svelte';
 
@@ -24,6 +26,8 @@
 	{#each ordered as entry (entry.id)}
 		{@const chiseled = isChiseled(game, entry.id)}
 		{@const round = roundOf(game, entry)}
+		{@const ssMeta = shuangshengMeta(entry)}
+		{@const gdMeta = guandanMeta(entry)}
 		{#if entry.kind === 'chisel'}
 			<div class="px-2 py-1 text-xs text-stone-400" data-testid="chisel-row-{entry.id}">
 				⟶ {t('chiselEntryRow', { n: round })}
@@ -62,12 +66,36 @@
 					{/if}
 				</button>
 				{#if expanded === entry.id}
-					<div class="mt-2 flex items-center justify-between border-t border-stone-200 pt-2">
-						{#if entry.note}<span class="text-xs text-stone-500 tabular">{entry.note}</span
-							>{:else}<span></span>{/if}
+					<div class="mt-2 flex items-center justify-between gap-2 border-t border-stone-200 pt-2">
+						<div class="min-w-0 space-y-0.5">
+							{#if entry.note}
+								<span class="block text-xs text-stone-500 tabular">{entry.note}</span>
+							{/if}
+							{#if ssMeta && (ssMeta.declarer || ssMeta.nextDeclarer)}
+								<span class="block text-xs text-stone-500" data-testid="entry-meta-{entry.id}">
+									{#if ssMeta.declarer}
+										{t('entryDealer', { name: nameOf(game, ssMeta.declarer) })}
+									{/if}
+									{#if ssMeta.nextDeclarer}
+										<span class="ml-2">
+											{t('entryNextDealer', { name: nameOf(game, ssMeta.nextDeclarer) })}
+										</span>
+									{/if}
+								</span>
+							{:else if gdMeta}
+								<span class="block text-xs text-stone-500" data-testid="entry-meta-{entry.id}">
+									{t('entryFinish', {
+										first: nameOf(game, gdMeta.finish[0]),
+										second: nameOf(game, gdMeta.finish[1]),
+										third: nameOf(game, gdMeta.finish[2]),
+										last: nameOf(game, gdMeta.finish[3])
+									})}
+								</span>
+							{/if}
+						</div>
 						{#if !chiseled}
 							{#if confirming === entry.id}
-								<div class="flex items-center gap-2 text-xs">
+								<div class="flex shrink-0 items-center gap-2 text-xs">
 									<span class="text-stone-600">{t('chiselConfirm')}</span>
 									<button
 										type="button"
@@ -93,7 +121,7 @@
 							{:else}
 								<button
 									type="button"
-									class="etch-chip"
+									class="shrink-0 etch-chip"
 									onclick={() => (confirming = entry.id)}
 									data-testid="chisel-ask-{entry.id}"
 								>

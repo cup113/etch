@@ -99,7 +99,7 @@ describe('拓片', () => {
 		expect(restored.variant).toEqual({ kind: 'guandan', levelsPerDoubleDown: 3 });
 		// 三游按旧行为 1 级
 		const round = guandanRound(
-			{ winningTeam: 0, partnerRank: 3 },
+			{ finish: ['p1', 'p2', 'p3', 'p4'] },
 			restored.players,
 			restored.variant
 		);
@@ -148,5 +148,124 @@ describe('拓片', () => {
 		const bad = JSON.parse(rub(g));
 		bad.game.name = 123;
 		expect(() => unrub(JSON.stringify(bad))).toThrow(/数据不完整/);
+	});
+
+	it('新 meta 随拓片往返：双升庄家/预指定、掼蛋名次', () => {
+		let ss = newGame({
+			templateId: 'shuangsheng',
+			variant: {
+				kind: 'shuangsheng',
+				levelsAt80: 0,
+				defenderCapScore: 0,
+				grandWinBonus: false,
+				allowRollback: false,
+				firstDeclarerTeam: 0,
+				declarerFlow: 'designate'
+			},
+			players: [
+				{ id: 'p1', name: '甲' },
+				{ id: 'p2', name: '乙' },
+				{ id: 'p3', name: '丙' },
+				{ id: 'p4', name: '丁' }
+			]
+		});
+		const ssMeta = {
+			kind: 'shuangsheng' as const,
+			declarer: 'p1',
+			declarerTeam: 0 as const,
+			defendersScore: 40,
+			nextDeclarer: 'p2'
+		};
+		ss = appendEntry(ss, {
+			id: newId(),
+			seq: nextSeq(ss),
+			ts: 1,
+			kind: 'template',
+			lines: [{ playerId: 'p1', delta: 1 }],
+			note: '40→D+1',
+			meta: ssMeta
+		});
+		expect(unrub(rub(ss)).entries[0].meta).toEqual(ssMeta);
+
+		let gd = newGame({
+			templateId: 'guandan',
+			variant: { kind: 'guandan', levelsPerDoubleDown: 3, levelsPerSingleDown: 2 },
+			players: [
+				{ id: 'p1', name: '甲' },
+				{ id: 'p2', name: '乙' },
+				{ id: 'p3', name: '丙' },
+				{ id: 'p4', name: '丁' }
+			]
+		});
+		const round = guandanRound({ finish: ['p1', 'p3', 'p2', 'p4'] }, gd.players, gd.variant);
+		gd = appendEntry(gd, {
+			id: newId(),
+			seq: nextSeq(gd),
+			ts: 1,
+			kind: 'template',
+			lines: round.lines,
+			note: round.note,
+			meta: round.meta
+		});
+		expect(unrub(rub(gd)).entries[0].meta).toEqual({
+			kind: 'guandan',
+			finish: ['p1', 'p3', 'p2', 'p4']
+		});
+	});
+
+	it('坏 meta 被拒：掼蛋名次缺人 / 双升庄家与队不一致', () => {
+		const gd = newGame({
+			templateId: 'guandan',
+			variant: { kind: 'guandan', levelsPerDoubleDown: 3, levelsPerSingleDown: 2 },
+			players: [
+				{ id: 'p1', name: '甲' },
+				{ id: 'p2', name: '乙' },
+				{ id: 'p3', name: '丙' },
+				{ id: 'p4', name: '丁' }
+			]
+		});
+		const round = guandanRound({ finish: ['p1', 'p3', 'p2', 'p4'] }, gd.players, gd.variant);
+		const gdGame = appendEntry(gd, {
+			id: newId(),
+			seq: nextSeq(gd),
+			ts: 1,
+			kind: 'template',
+			lines: round.lines,
+			note: round.note,
+			meta: round.meta
+		});
+		const badGd = JSON.parse(rub(gdGame));
+		badGd.game.entries[0].meta.finish = ['p1', 'p2', 'p3'];
+		expect(() => unrub(JSON.stringify(badGd))).toThrow(/校验失败/);
+
+		const ss = newGame({
+			templateId: 'shuangsheng',
+			variant: {
+				kind: 'shuangsheng',
+				levelsAt80: 0,
+				defenderCapScore: 0,
+				grandWinBonus: false,
+				allowRollback: false,
+				firstDeclarerTeam: 0
+			},
+			players: [
+				{ id: 'p1', name: '甲' },
+				{ id: 'p2', name: '乙' },
+				{ id: 'p3', name: '丙' },
+				{ id: 'p4', name: '丁' }
+			]
+		});
+		const ssGame = appendEntry(ss, {
+			id: newId(),
+			seq: nextSeq(ss),
+			ts: 1,
+			kind: 'template',
+			lines: [{ playerId: 'p1', delta: 1 }],
+			note: '40→D+1',
+			meta: { declarerTeam: 0, defendersScore: 40 }
+		});
+		const badSs = JSON.parse(rub(ssGame));
+		badSs.game.entries[0].meta.declarer = 'p2';
+		expect(() => unrub(JSON.stringify(badSs))).toThrow(/校验失败/);
 	});
 });

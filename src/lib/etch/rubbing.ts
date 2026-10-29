@@ -3,7 +3,7 @@
 // 旧版本 App 读到不认识的模板会被它自己的白名单拒绝（它本来也不会算那个模板）。
 
 import type { Game } from './types';
-import { validateGame } from './ledger';
+import { validateTablet } from './templates/validate';
 
 export const RUBBING_VERSION = 1;
 
@@ -56,7 +56,7 @@ export function unrub(text: string): Game {
 		throw new RubbingError('碑面数据不完整');
 	}
 	try {
-		validateGame(g);
+		validateTablet(g);
 	} catch (err) {
 		const reason = err instanceof Error ? err.message : String(err);
 		throw new RubbingError(`碑面数据校验失败：${reason}`);

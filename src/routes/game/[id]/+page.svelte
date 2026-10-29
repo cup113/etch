@@ -17,6 +17,7 @@
 	import { t, currentLang } from '../../../lib/i18n/i18n.svelte';
 	import TotalsGrid from '../../../lib/components/TotalsGrid.svelte';
 	import ProclamationBar from '../../../lib/components/ProclamationBar.svelte';
+	import RoundSetupBar from '../../../lib/components/RoundSetupBar.svelte';
 	import EtchPanel from '../../../lib/components/EtchPanel.svelte';
 	import EntryList from '../../../lib/components/EntryList.svelte';
 
@@ -188,6 +189,7 @@
 	<div class="space-y-4">
 		<TotalsGrid {game} />
 		<ProclamationBar {game} />
+		<RoundSetupBar {game} />
 		<EtchPanel {game} {onetch} />
 		<EntryList {game} {onchisel} />
 	</div>

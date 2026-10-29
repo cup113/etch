@@ -11,7 +11,8 @@ export type LedgerErrorCode =
 	| 'chisel-must-have-no-lines'
 	| 'chisel-target-missing'
 	| 'chisel-target-already-chiseled'
-	| 'chisel-of-chisel';
+	| 'chisel-of-chisel'
+	| 'bad-entry-meta';
 
 export class LedgerError extends Error {
 	constructor(

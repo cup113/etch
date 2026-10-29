@@ -24,8 +24,8 @@ export interface Entry {
 	note?: string;
 	/** 仅凿除笔：指向被凿的笔 */
 	chisels?: EntryId;
-	/** 结构化参数快照（双升：庄家/得分/回退；其余模板缺省，note 仍是人读文本） */
-	meta?: ShuangshengEntryMeta;
+	/** 结构化参数快照（双升：庄家/得分/回退/预指定；掼蛋：出完顺序；其余模板缺省） */
+	meta?: EntryMeta;
 	/** 增减行；凿除笔为空数组 */
 	lines: Line[];
 }
@@ -65,6 +65,9 @@ export interface GuandanVariant {
 	levelsPerSingleDown?: 1 | 2;
 }
 
+/** 双升：下一局庄家怎么定。rotate = 轮庄；reveal = 亮牌后每局选；designate = 开局前指定 */
+export type ShuangshengDeclarerFlow = 'rotate' | 'reveal' | 'designate';
+
 /** 双升：闲家得分 → 升级数的换算参数（换算表见 templates/shuangsheng.ts）。 */
 export interface ShuangshengVariant {
 	kind: 'shuangsheng';
@@ -76,8 +79,12 @@ export interface ShuangshengVariant {
 	grandWinBonus: boolean;
 	/** 允许倒级（抠底回退的罕见房规）：开启后刻入表单出现可选回退区 */
 	allowRollback: boolean;
-	/** 首庄队伍（座位 0-2 = 队 0，1-3 = 队 1）；之后每笔由账本推导 */
+	/** 首庄队伍（座位 0-2 = 队 0，1-3 = 队 1）；旧碑只有队，新碑可由 firstDeclarer 推出 */
 	firstDeclarerTeam: 0 | 1;
+	/** 首庄（可选）：第一局坐庄的人；缺省 = 旧碑，只知队 */
+	firstDeclarer?: PlayerId;
+	/** 下一局庄家规则；缺省 = rotate（旧碑按轮庄） */
+	declarerFlow?: ShuangshengDeclarerFlow;
 }
 
 /** CABO：触线终局（到 threshold 宣告最低分者胜），门槛默认 100。 */
@@ -89,17 +96,32 @@ export interface CaboVariant {
 export type Variant =
 	GenericVariant | DoudizhuVariant | UnoVariant | GuandanVariant | ShuangshengVariant | CaboVariant;
 
-/** 双升笔的结构化参数快照：庄家追踪与回退差值的重放依据（碑的折叠只用 lines）。 */
+/** 双升笔的结构化参数快照：庄家追踪、预指定与回退差值的重放依据（碑的折叠只用 lines）。 */
 export interface ShuangshengEntryMeta {
-	/** 本笔的庄家队（用户可在表单改写，推导尊重改写） */
+	/** 新笔写入；旧笔没有，读时按双升处理 */
+	kind?: 'shuangsheng';
+	/** 本笔的庄家队（旧笔必有；新笔由 declarer 的座位推出） */
 	declarerTeam: 0 | 1;
+	/** 本笔坐庄的人；旧笔没有，只能按队推导 */
+	declarer?: PlayerId;
 	/** 闲家得分（0–200） */
 	defendersScore: number;
+	/** 预指定：下一局坐庄的人（仅“指定”模式写入） */
+	nextDeclarer?: PlayerId;
 	/** 回退（可选）：哪队被抠底 */
 	rollbackTeam?: 0 | 1;
 	/** 回退（可选）：回到第几级（0 = 打 2 … 12 = 打 A，绝对目标） */
 	rollbackToLevel?: number;
 }
+
+/** 掼蛋笔的结构化参数快照：出完顺序（头游/二游/三游/末游），进级与进贡的重放依据。 */
+export interface GuandanEntryMeta {
+	kind: 'guandan';
+	finish: [PlayerId, PlayerId, PlayerId, PlayerId];
+}
+
+/** 笔的结构化快照：按碑的模板区分；双升旧笔无 kind，缺省按双升读。 */
+export type EntryMeta = ShuangshengEntryMeta | GuandanEntryMeta;
 
 /** 碑：一局牌的完整账本 */
 export interface Game {
