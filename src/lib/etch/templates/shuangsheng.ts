@@ -9,6 +9,9 @@
 // 优先顺序：本笔实际庄家 > 上一笔预指定 > 流转规则。旧笔只有 declarerTeam，回落为队级。
 // 允许倒级（默认关）：开启后表单可选「回退到第几级」（2..A 绝对目标，差值并入同笔）——
 // 对应抠底房规（打 J 被副 J 抠回 5、主 J 抠回 3、A 被抠回 J），罕见、不做公式推导。
+// 必打（默认关，none / A / JA）：级牌闸门。升级最多停在该队最近的必打级；停住后必须
+// 做庄打成这一级才能继续（A 必打：只有做庄打成 A 才算过 A）。闸门在刻入时把升级截进
+// 同一笔的增减行，折叠仍只做加法；不追溯重算已刻的笔。
 // 级牌阶梯 2..A 与掼蛋共用（levels.ts）；过 A 宣告封顶，碑不执法。
 
 import type {
@@ -18,10 +21,11 @@ import type {
 	Proclamation,
 	ShuangshengDeclarerFlow,
 	ShuangshengEntryMeta,
+	ShuangshengMustPlay,
 	ShuangshengVariant
 } from '../types';
 import { fold, isChiseled } from '../ledger';
-import { LEVEL_CAP, levelName } from './levels';
+import { LEVEL_CAP, LEVEL_NAMES, levelName } from './levels';
 import { teamOfSeat } from './teams';
 import type { RoundResult, Template } from './index';
 
@@ -68,6 +72,49 @@ export function otherTeam(team: 0 | 1): 0 | 1 {
 	return team === 0 ? 1 : 0;
 }
 
+const LEVEL_J = LEVEL_NAMES.indexOf('J');
+const LEVEL_A = LEVEL_CAP - 1;
+
+const MUST_PLAY_GATES: Record<ShuangshengMustPlay, readonly number[]> = {
+	none: [],
+	A: [LEVEL_A],
+	JA: [LEVEL_J, LEVEL_A]
+};
+
+/** 变体的必打级；缺省/未知值一律按 none（旧碑兼容）。 */
+export function mustPlayOf(variant: Pick<ShuangshengVariant, 'mustPlay'>): ShuangshengMustPlay {
+	return variant.mustPlay === 'A' || variant.mustPlay === 'JA' ? variant.mustPlay : 'none';
+}
+
+/** 必打级清单：none → []，A → [A]，JA → [J, A]。 */
+export function gateLevelsOf(variant: Pick<ShuangshengVariant, 'mustPlay'>): readonly number[] {
+	return MUST_PLAY_GATES[mustPlayOf(variant)];
+}
+
+/** 本局结束时所处的必打级（下一局要打它）；未停在必打级则 undefined。 */
+export interface GatedGain {
+	gain: number;
+	atGate?: number;
+}
+
+/**
+ * 升级闸门：先算原始升级数，再把升级截在最近的必打级。
+ * 庄家胜：本局打的就是 level，等于 level 的闸门已过，取严格更高的下一道；
+ * 闲家胜：胜方还没在自己的 level 做庄打过，等于 level 的闸门仍然拦住。
+ */
+export function appliedGain(
+	level: number,
+	rawGain: number,
+	winnerIsDeclarer: boolean,
+	variant: Pick<ShuangshengVariant, 'mustPlay'>
+): GatedGain {
+	const gates = gateLevelsOf(variant);
+	const next = winnerIsDeclarer ? gates.find((g) => g > level) : gates.find((g) => g >= level);
+	const gain = next === undefined ? rawGain : Math.min(rawGain, next - level);
+	const landed = level + gain;
+	return gates.includes(landed) ? { gain, atGate: landed } : { gain };
+}
+
 function assertScore(score: number): void {
 	if (!Number.isInteger(score) || score < 0 || score > SHUANGSHENG_MAX_SCORE) {
 		throw new Error(`闲家得分必须是 0–${SHUANGSHENG_MAX_SCORE} 的整数`);
@@ -79,7 +126,7 @@ export function shuangshengRound(
 	input: ShuangshengInput,
 	players: { id: PlayerId }[],
 	variant: ShuangshengVariant,
-	/** 各队当前级数（折叠得出），回退差值的基数 */
+	/** 各队当前级数（折叠得出），回退差值与必打闸门的基数 */
 	teamLevels: Record<0 | 1, number>
 ): RoundResult {
 	if (variant.kind !== 'shuangsheng') throw new Error('not a shuangsheng game');
@@ -105,9 +152,16 @@ export function shuangshengRound(
 	const declarerTeam = teamOfSeat(declarerSeat);
 	const defendersWin = input.defendersScore >= TAKEOVER_SCORE;
 	const winnerTeam: 0 | 1 = defendersWin ? otherTeam(declarerTeam) : declarerTeam;
-	const gain = defendersWin
+	const rawGain = defendersWin
 		? (defenderGain(input.defendersScore, variant) as number)
 		: declarerGain(input.defendersScore, variant);
+	// 必打闸门：用胜方当前级数截住升级，截后的级数才是这一笔记下的增减
+	const { gain, atGate } = appliedGain(
+		teamLevels[winnerTeam] ?? 0,
+		rawGain,
+		!defendersWin,
+		variant
+	);
 
 	// 按座位序累积每人增减：胜方 +N（含 +0），回退队另加 (目标级 − 当前级)
 	const deltas = new Map<PlayerId, number>();
@@ -123,6 +177,7 @@ export function shuangshengRound(
 	}
 
 	const side = defendersWin ? 'X' : 'D';
+	const gateNote = atGate === undefined ? '' : `→${levelName(atGate)}`;
 	const rollbackNote = input.rollback ? `/R ${levelName(input.rollback.toLevel)}` : '';
 	const meta: ShuangshengEntryMeta = {
 		kind: 'shuangsheng',
@@ -137,7 +192,7 @@ export function shuangshengRound(
 
 	return {
 		lines: [...deltas.entries()].map(([playerId, delta]) => ({ playerId, delta })),
-		note: `${input.defendersScore}→${side}+${gain}${rollbackNote}`,
+		note: `${input.defendersScore}→${side}+${gain}${gateNote}${rollbackNote}`,
 		meta
 	};
 }
@@ -272,7 +327,8 @@ export const shuangsheng: Template<ShuangshengVariant> = {
 		grandWinBonus: false,
 		allowRollback: false,
 		firstDeclarerTeam: 0,
-		declarerFlow: 'rotate'
+		declarerFlow: 'rotate',
+		mustPlay: 'none'
 	},
 	detect: detectShuangsheng
 };

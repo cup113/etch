@@ -192,6 +192,46 @@ test('双升：首庄可先选，刻完显示下一局庄家，刷新仍在，�
 	await expect(page.getByTestId('next-dealer')).toContainText('下一局 · 丙 做庄');
 });
 
+test('双升 A 必打：K 只升到 A，做庄做成 A 才过 A', async ({ page }) => {
+	await page.goto('/');
+	await page.getByTestId('tpl-card-shuangsheng').click();
+	await page.getByTestId('ss-must-play-a').click();
+	const combo = page.getByTestId('player-combobox').locator('input');
+	for (const name of ['甲', '乙', '丙', '丁']) {
+		await combo.fill(name);
+		await combo.press('Enter');
+	}
+	await page.getByTestId('first-declarer-seat-0').click();
+	await page.getByTestId('start-tablet').click();
+	await expect(page.getByTestId('board-title')).toBeVisible();
+
+	const etch = async (score: string) => {
+		await page.getByTestId('defenders-score').fill(score);
+		await page.getByTestId('etch-submit').click();
+	};
+
+	// 三次大光 → 级 9；再拿 1 分（庄家升 2）→ 级 11（K）
+	await etch('0');
+	await etch('0');
+	await etch('0');
+	await expect(page.getByTestId('totals')).toContainText('Lv 9');
+	await etch('1');
+	await expect(page.getByTestId('totals')).toContainText('Lv 11');
+
+	// K 上再拿 0 分：原始 +3，被 A 闸门截到 +1
+	await page.getByTestId('defenders-score').fill('0');
+	await expect(page.getByTestId('ss-preview')).toContainText('庄家升 1 级（A 必打）');
+	await page.getByTestId('etch-submit').click();
+	await expect(page.getByTestId('totals')).toContainText('Lv 12');
+	await expect(page.getByTestId('totals')).toContainText('A');
+
+	// 下一局庄家正打 A；做成 40 分 → 过 A
+	await expect(page.getByTestId('ss-must-play-badge')).toContainText('A 必打');
+	await etch('40');
+	await expect(page.getByTestId('proclamations')).toContainText('甲 过 A');
+	await expect(page.getByTestId('totals')).toContainText('过A');
+});
+
 test('掼蛋：按出完顺序记名次，推下一局进贡；刷新仍在；凿除回滚', async ({ page }) => {
 	await page.goto('/');
 	await page.getByTestId('tpl-card-guandan').click();

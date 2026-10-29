@@ -13,6 +13,7 @@
 		PlayerId,
 		PlayerRef,
 		ShuangshengDeclarerFlow,
+		ShuangshengMustPlay,
 		TemplateId,
 		Variant
 	} from '../../../lib/etch/types';
@@ -34,6 +35,7 @@
 	let ssGrandBonus = $state(false);
 	let ssAllowRollback = $state(false);
 	let ssDeclarerFlow = $state<ShuangshengDeclarerFlow>('rotate');
+	let ssMustPlay = $state<ShuangshengMustPlay>('none');
 	/** 首庄（人）；留空则在第一笔刻入时选 */
 	let ssFirstDeclarer = $state<PlayerId | null>(null);
 
@@ -89,6 +91,7 @@
 									allowRollback: ssAllowRollback,
 									firstDeclarerTeam: ssFirstTeam,
 									declarerFlow: ssDeclarerFlow,
+									mustPlay: ssMustPlay,
 									...(ssFirstSeat >= 0 ? { firstDeclarer: picked[ssFirstSeat].id } : {})
 								}
 							: templateId === 'doudizhu'
@@ -317,6 +320,52 @@
 					<option value={160}>{t('capAt160')}</option>
 					<option value={200}>{t('capAt200')}</option>
 				</select>
+			</div>
+			<div>
+				<div class="flex flex-wrap items-center gap-1">
+					<span class="text-xs font-bold tracking-wider text-stone-500 uppercase">
+						{t('mustPlayLevels')}
+					</span>
+					<InfoHint
+						label={t('infoMustPlay')}
+						testid="ss-must-play"
+						table={{
+							head: [t('colRule'), t('colEffect')],
+							rows: [
+								[t('mustPlayNone'), t('mustPlayNoneCell')],
+								[t('mustPlayA'), t('mustPlayACell')],
+								[t('mustPlayJA'), t('mustPlayJACell')]
+							],
+							note: t('mustPlayNote')
+						}}
+					/>
+				</div>
+				<div class="mt-1 flex gap-2">
+					<button
+						type="button"
+						class="flex-1 etch-chip {ssMustPlay === 'none' ? 'etch-chip-on' : ''}"
+						onclick={() => (ssMustPlay = 'none')}
+						data-testid="ss-must-play-none"
+					>
+						{t('mustPlayNone')}
+					</button>
+					<button
+						type="button"
+						class="flex-1 etch-chip {ssMustPlay === 'A' ? 'etch-chip-on' : ''}"
+						onclick={() => (ssMustPlay = 'A')}
+						data-testid="ss-must-play-a"
+					>
+						{t('mustPlayA')}
+					</button>
+					<button
+						type="button"
+						class="flex-1 etch-chip {ssMustPlay === 'JA' ? 'etch-chip-on' : ''}"
+						onclick={() => (ssMustPlay = 'JA')}
+						data-testid="ss-must-play-ja"
+					>
+						{t('mustPlayJA')}
+					</button>
+				</div>
 			</div>
 			<div class="flex flex-wrap items-center justify-between gap-2">
 				<span class="flex items-center gap-1 text-sm font-medium text-stone-700">

@@ -13,16 +13,20 @@
 	} from '../etch/templates/guandan';
 	import { caboRound } from '../etch/templates/cabo';
 	import {
+		appliedGain,
 		declarerFlowOf,
 		declarerGain,
 		defenderGain,
+		gateLevelsOf,
 		nextDealerOf,
+		otherTeam,
 		shuangshengRound,
 		teamLevelsOf,
-		SHUANGSHENG_MAX_SCORE
+		SHUANGSHENG_MAX_SCORE,
+		type GatedGain
 	} from '../etch/templates/shuangsheng';
 	import { teamOfSeat } from '../etch/templates/teams';
-	import { LEVEL_NAMES } from '../etch/templates/levels';
+	import { LEVEL_NAMES, levelName } from '../etch/templates/levels';
 	import { nameOf } from '../etch/display';
 	import type { Game, PlayerId } from '../etch/types';
 	import type { DictKey } from '../i18n/dict';
@@ -256,19 +260,47 @@
 	const ssFlow = $derived(ssVariant ? declarerFlowOf(ssVariant) : 'rotate');
 	const ssNext = $derived(ssVariant ? nextDealerOf(game) : null);
 	const ssDealer = $derived(declarerPick ?? (ssNext?.kind === 'known' ? ssNext.declarer : null));
+	const ssLevels = $derived(ssVariant ? teamLevelsOf(game) : null);
+	const ssDeclarerTeam = $derived.by(() => {
+		if (!ssDealer) return null;
+		const seat = game.players.findIndex((p) => p.id === ssDealer);
+		return seat >= 0 ? teamOfSeat(seat) : null;
+	});
+	/** 本局庄家正打在自己的必打级上（进入闸门局）。 */
+	const ssGate = $derived.by(() => {
+		if (!ssVariant || ssDeclarerTeam === null || !ssLevels) return null;
+		const level = ssLevels[ssDeclarerTeam] ?? 0;
+		return gateLevelsOf(ssVariant).includes(level) ? level : null;
+	});
 
-	/** 实时换算预览：分数 → 谁升几级（不合法输入不显示） */
+	/** 实时换算预览：分数 → 谁升几级；有庄家时套必打闸门（不合法输入不显示） */
 	const ssPreview = $derived.by(() => {
 		if (game.variant.kind !== 'shuangsheng') return null;
 		const raw = asText(defendersScore);
 		if (raw === '') return null;
 		const n = Number(raw);
 		if (!Number.isInteger(n) || n < 0 || n > SHUANGSHENG_MAX_SCORE) return null;
-		if (n >= 80) {
-			const gain = defenderGain(n, game.variant) ?? 0;
-			return gain === 0 ? t('previewTakeoverNoGain') : t('previewTakeover', { n: gain });
+		const defendersWin = n >= 80;
+		const winnerTeam =
+			ssDeclarerTeam === null ? null : defendersWin ? otherTeam(ssDeclarerTeam) : ssDeclarerTeam;
+		const rawGain = defendersWin
+			? (defenderGain(n, game.variant) ?? 0)
+			: declarerGain(n, game.variant);
+		// 亮牌/指定还没点人：没有庄家就算不出胜方级数，先按原表显示，不编造闸门
+		const applied: GatedGain =
+			winnerTeam === null || !ssLevels
+				? { gain: rawGain }
+				: appliedGain(ssLevels[winnerTeam] ?? 0, rawGain, !defendersWin, game.variant);
+		const gateNote =
+			applied.atGate === undefined ? '' : t('previewGate', { level: levelName(applied.atGate) });
+		if (defendersWin) {
+			return (
+				(applied.gain === 0
+					? t('previewTakeoverNoGain')
+					: t('previewTakeover', { n: applied.gain })) + gateNote
+			);
 		}
-		return t('previewDeclarerUp', { n: declarerGain(n, game.variant) });
+		return t('previewDeclarerUp', { n: applied.gain }) + gateNote;
 	});
 
 	function submitShuangsheng(): void {
@@ -595,6 +627,11 @@
 					{/each}
 				</div>
 			</div>
+			{#if ssGate !== null}
+				<p class="text-xs font-semibold text-stone-500" data-testid="ss-must-play-badge">
+					{t('mustPlayBadge', { level: levelName(ssGate) })}
+				</p>
+			{/if}
 			<label>
 				<span class="mb-1 block text-xs font-bold tracking-wider text-stone-500 uppercase">
 					{t('defendersScore')}

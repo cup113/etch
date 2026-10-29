@@ -68,6 +68,9 @@ export interface GuandanVariant {
 /** 双升：下一局庄家怎么定。rotate = 轮庄；reveal = 亮牌后每局选；designate = 开局前指定 */
 export type ShuangshengDeclarerFlow = 'rotate' | 'reveal' | 'designate';
 
+/** 双升：必打级。none = 都不必打；A = A 必打；JA = J、A 必打 */
+export type ShuangshengMustPlay = 'none' | 'A' | 'JA';
+
 /** 双升：闲家得分 → 升级数的换算参数（换算表见 templates/shuangsheng.ts）。 */
 export interface ShuangshengVariant {
 	kind: 'shuangsheng';
@@ -85,6 +88,8 @@ export interface ShuangshengVariant {
 	firstDeclarer?: PlayerId;
 	/** 下一局庄家规则；缺省 = rotate（旧碑按轮庄） */
 	declarerFlow?: ShuangshengDeclarerFlow;
+	/** 必打级：none / A / JA；缺省 = none（旧碑兼容） */
+	mustPlay?: ShuangshengMustPlay;
 }
 
 /** CABO：触线终局（到 threshold 宣告最低分者胜），门槛默认 100。 */

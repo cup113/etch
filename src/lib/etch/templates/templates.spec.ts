@@ -15,8 +15,11 @@ import {
 import { caboRound } from './cabo';
 import {
 	shuangshengRound,
+	appliedGain,
 	declarerFlowOf,
 	declarerTeamOf,
+	gateLevelsOf,
+	mustPlayOf,
 	nextDealerOf,
 	teamLevelsOf,
 	type ShuangshengInput
@@ -540,6 +543,183 @@ describe('双升：庄家流转', () => {
 			{ kind: 'level-capped', playerId: 'p1' },
 			{ kind: 'level-capped', playerId: 'p3' }
 		]);
+	});
+});
+
+describe('双升：必打闸门', () => {
+	const P4 = [
+		{ id: 'p1', name: '甲' },
+		{ id: 'p2', name: '乙' },
+		{ id: 'p3', name: '丙' },
+		{ id: 'p4', name: '丁' }
+	];
+	const V = (over: Partial<ShuangshengVariant> = {}): ShuangshengVariant => ({
+		kind: 'shuangsheng',
+		levelsAt80: 0,
+		defenderCapScore: 0,
+		grandWinBonus: false,
+		allowRollback: false,
+		firstDeclarerTeam: 0,
+		mustPlay: 'none',
+		...over
+	});
+	const round = (
+		levels: Record<0 | 1, number>,
+		score: number,
+		variant: ShuangshengVariant = V(),
+		declarer = 'p1'
+	) => shuangshengRound({ declarer, defendersScore: score }, P4, variant, levels);
+	const etch = (g: Game, input: ShuangshengInput): Game => {
+		const r = shuangshengRound(input, g.players, g.variant as ShuangshengVariant, teamLevelsOf(g));
+		return appendEntry(g, {
+			id: newId(),
+			seq: nextSeq(g),
+			ts: 1,
+			kind: 'template',
+			lines: r.lines,
+			note: r.note,
+			meta: r.meta
+		});
+	};
+
+	it('缺省/未知按不必打；三档闸门清单', () => {
+		expect(mustPlayOf(V())).toBe('none');
+		expect(mustPlayOf(V({ mustPlay: 'A' }))).toBe('A');
+		expect(mustPlayOf(V({ mustPlay: 'JA' }))).toBe('JA');
+		expect(mustPlayOf({})).toBe('none');
+		expect(gateLevelsOf(V())).toEqual([]);
+		expect(gateLevelsOf(V({ mustPlay: 'A' }))).toEqual([12]);
+		expect(gateLevelsOf(V({ mustPlay: 'JA' }))).toEqual([9, 12]);
+	});
+
+	it('appliedGain：庄家胜取更高闸门，闲家胜取 ≥ 当前级', () => {
+		expect(appliedGain(11, 3, true, { mustPlay: 'A' })).toEqual({ gain: 1, atGate: 12 });
+		expect(appliedGain(11, 3, false, { mustPlay: 'A' })).toEqual({ gain: 1, atGate: 12 });
+		expect(appliedGain(12, 3, false, { mustPlay: 'A' })).toEqual({ gain: 0, atGate: 12 });
+		expect(appliedGain(9, 3, true, { mustPlay: 'JA' })).toEqual({ gain: 3, atGate: 12 });
+		expect(appliedGain(8, 3, true, { mustPlay: 'JA' })).toEqual({ gain: 1, atGate: 9 });
+		expect(appliedGain(11, 3, true, { mustPlay: 'none' })).toEqual({ gain: 3 });
+	});
+
+	it('A 必打：庄家 K 的 0 分只到 A；A 做庄 0 分才过 A', () => {
+		const k = round({ 0: 11, 1: 0 }, 0, V({ mustPlay: 'A' }));
+		expect(k.lines).toEqual([
+			{ playerId: 'p1', delta: 1 },
+			{ playerId: 'p3', delta: 1 }
+		]);
+		expect(k.note).toBe('0→D+1→A');
+		const a = round({ 0: 12, 1: 0 }, 0, V({ mustPlay: 'A' }));
+		expect(a.lines).toEqual([
+			{ playerId: 'p1', delta: 3 },
+			{ playerId: 'p3', delta: 3 }
+		]);
+		expect(a.note).toBe('0→D+3');
+	});
+
+	it('A 必打：闲家 K 的 200 分只到 A；闲家 A 的 200 分只 +0', () => {
+		const k = round({ 0: 0, 1: 11 }, 200, V({ mustPlay: 'A' }));
+		expect(k.lines).toEqual([
+			{ playerId: 'p2', delta: 1 },
+			{ playerId: 'p4', delta: 1 }
+		]);
+		expect(k.note).toBe('200→X+1→A');
+		const a = round({ 0: 0, 1: 12 }, 200, V({ mustPlay: 'A' }));
+		expect(a.lines).toEqual([
+			{ playerId: 'p2', delta: 0 },
+			{ playerId: 'p4', delta: 0 }
+		]);
+		expect(a.note).toBe('200→X+0→A');
+		// 80 分整、80 分升级数 0：原始就是 0，仍标出下一局打 A
+		expect(round({ 0: 0, 1: 12 }, 80, V({ mustPlay: 'A' })).note).toBe('80→X+0→A');
+	});
+
+	it('J、A 必打：10 只到 J；J 跳 Q/K 到 A；A 才过 A', () => {
+		const atJ = round({ 0: 8, 1: 0 }, 0, V({ mustPlay: 'JA' }));
+		expect(atJ.lines).toEqual([
+			{ playerId: 'p1', delta: 1 },
+			{ playerId: 'p3', delta: 1 }
+		]);
+		expect(atJ.note).toBe('0→D+1→J');
+		const atA = round({ 0: 9, 1: 0 }, 0, V({ mustPlay: 'JA' }));
+		expect(atA.lines).toEqual([
+			{ playerId: 'p1', delta: 3 },
+			{ playerId: 'p3', delta: 3 }
+		]);
+		expect(atA.note).toBe('0→D+3→A');
+		// 大光奖励的 +4 也被 A 闸门截到 +3
+		const bonus = round({ 0: 9, 1: 0 }, 0, V({ mustPlay: 'JA', grandWinBonus: true }));
+		expect(bonus.lines).toEqual([
+			{ playerId: 'p1', delta: 3 },
+			{ playerId: 'p3', delta: 3 }
+		]);
+		expect(bonus.note).toBe('0→D+3→A');
+		const passed = round({ 0: 12, 1: 0 }, 0, V({ mustPlay: 'JA' }));
+		expect(passed.lines).toEqual([
+			{ playerId: 'p1', delta: 3 },
+			{ playerId: 'p3', delta: 3 }
+		]);
+		expect(passed.note).toBe('0→D+3');
+	});
+
+	it('不必打：同一局直接跳级（回归）', () => {
+		const r = round({ 0: 11, 1: 0 }, 0);
+		expect(r.lines).toEqual([
+			{ playerId: 'p1', delta: 3 },
+			{ playerId: 'p3', delta: 3 }
+		]);
+		expect(r.note).toBe('0→D+3');
+	});
+
+	it('与封顶 / 80 分升级数叠加：先换算再截闸门', () => {
+		const r = round(
+			{ 0: 0, 1: 11 },
+			200,
+			V({ mustPlay: 'A', levelsAt80: 1, defenderCapScore: 160 })
+		);
+		// 200、N80=1、封 160 → 原始 +3；K 被 A 截到 +1
+		expect(r.note).toBe('200→X+1→A');
+	});
+
+	it('落账后：K 庄家 0 分到 A 且同队续庄；下一局 A 庄家 0 分过 A', () => {
+		let g = mkGame('shuangsheng', V({ mustPlay: 'A', firstDeclarer: 'p1' }), 4);
+		g = appendEntry(
+			g,
+			manualEntry(
+				nextSeq(g),
+				g.players.map((p, seat) => ({
+					playerId: p.id,
+					delta: teamOfSeat(seat) === 0 ? 11 : 0
+				}))
+			)
+		);
+		g = etch(g, { declarer: 'p1', defendersScore: 0 });
+		expect(teamLevelsOf(g)).toEqual({ 0: 12, 1: 0 });
+		expect(nextDealerOf(g)).toEqual({ kind: 'known', declarer: 'p3', team: 0, via: 'hold' });
+		g = etch(g, { declarer: 'p3', defendersScore: 0 });
+		expect(teamLevelsOf(g)).toEqual({ 0: 15, 1: 0 });
+		expect(templateOf('shuangsheng').detect?.(g)).toEqual([
+			{ kind: 'level-capped', playerId: 'p1' },
+			{ kind: 'level-capped', playerId: 'p3' }
+		]);
+	});
+
+	it('A 做闲家 200 分：只换庄，下一局仍打 A', () => {
+		let g = mkGame('shuangsheng', V({ mustPlay: 'A', firstDeclarer: 'p1' }), 4);
+		g = appendEntry(
+			g,
+			manualEntry(
+				nextSeq(g),
+				g.players.map((p, seat) => ({
+					playerId: p.id,
+					delta: teamOfSeat(seat) === 0 ? 0 : 12
+				}))
+			)
+		);
+		g = etch(g, { declarer: 'p1', defendersScore: 200 });
+		expect(teamLevelsOf(g)).toEqual({ 0: 0, 1: 12 });
+		const next = nextDealerOf(g);
+		expect(next).toEqual({ kind: 'known', declarer: 'p2', team: 1, via: 'takeover' });
+		if (next.kind === 'known') expect(teamLevelsOf(g)[next.team]).toBe(12);
 	});
 });
 

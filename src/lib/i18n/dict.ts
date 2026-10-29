@@ -128,6 +128,10 @@ export const dict = {
 	capNoLimit: { zh: '不设限', en: 'No ceiling' },
 	capCeiling2: { zh: '80 分升级数 +2', en: 'Levels at 80 + 2' },
 	capCeiling3: { zh: '80 分升级数 +3', en: 'Levels at 80 + 3' },
+	mustPlayLevels: { zh: '必打级', en: 'Must-play levels' },
+	mustPlayNone: { zh: '全都不必打', en: 'None' },
+	mustPlayA: { zh: 'A 必打', en: 'A only' },
+	mustPlayJA: { zh: 'J、A 必打', en: 'J & A' },
 
 	infoGrandWinBonus: { zh: '大光奖励', en: 'Shutout bonus' },
 	grandWinBonusHelp: {
@@ -163,6 +167,23 @@ export const dict = {
 	declarerFlowNote: {
 		zh: '座位按出牌顺序添加，下一位即下家。',
 		en: 'Seats are added in play order; the next seat is the next player.'
+	},
+
+	infoMustPlay: { zh: '必打级', en: 'Must-play levels' },
+	colRule: { zh: '规则', en: 'Rule' },
+	colEffect: { zh: '表现', en: 'Effect' },
+	mustPlayNoneCell: { zh: '升级可跳过 J / A', en: 'Gains may skip J and A' },
+	mustPlayACell: {
+		zh: '升级停在 A；做庄打成 A 才过 A',
+		en: 'Gains stop at A; deal and win A to finish'
+	},
+	mustPlayJACell: {
+		zh: '升级停在 J / A；两级都要做庄打成',
+		en: 'Gains stop at J and A; win both as declarer'
+	},
+	mustPlayNote: {
+		zh: '封顶截的是得分换算出的级数，必打截的是级牌。例：打 K 时闲家拿 200 分 → 只升到 A，下一局打 A；已在 A 做闲家拿 200 分 → 下一局仍打 A。',
+		en: 'The cap limits the score-to-levels table; must-play limits the level itself. E.g. at K, defenders score 200 → stop at A; next hand plays A. Already at A as defenders with 200 → next hand still A.'
 	},
 
 	infoTribute: { zh: '进贡', en: 'Tribute' },
@@ -266,6 +287,8 @@ export const dict = {
 	previewDeclarerUp: { zh: '庄家升 {n} 级', en: 'Declarers up {n} level(s)' },
 	previewTakeover: { zh: '闲家上台，升 {n} 级', en: 'Defenders take over, up {n} level(s)' },
 	previewTakeoverNoGain: { zh: '闲家上台，只换庄', en: 'Defenders take over, no levels' },
+	previewGate: { zh: '（{level} 必打）', en: ' ({level} must-play)' },
+	mustPlayBadge: { zh: '{level} 必打', en: '{level} must-play' },
 	rollbackToggle: { zh: '回退（抠底）', en: 'Rollback (dig-back)' },
 	rollbackTeam: { zh: '哪队回退', en: 'Which team rolls back' },
 	rollbackTo: { zh: '回到', en: 'Back to' },

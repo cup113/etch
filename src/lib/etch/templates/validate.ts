@@ -24,6 +24,10 @@ function validateShuangsheng(game: Game, variant: ShuangshengVariant): void {
 	if (variant.firstDeclarerTeam !== 0 && variant.firstDeclarerTeam !== 1) {
 		throw new LedgerError('bad-entry-meta', 'firstDeclarerTeam 必须是 0 或 1');
 	}
+	const mustPlay = (variant as { mustPlay?: unknown }).mustPlay;
+	if (mustPlay !== undefined && mustPlay !== 'none' && mustPlay !== 'A' && mustPlay !== 'JA') {
+		throw new LedgerError('bad-entry-meta', 'mustPlay 必须是 none / A / JA');
+	}
 	if (variant.firstDeclarer !== undefined) {
 		const seat = seatOf(game, variant.firstDeclarer);
 		if (seat < 0) throw new LedgerError('bad-entry-meta', 'first declarer 不在碑上');

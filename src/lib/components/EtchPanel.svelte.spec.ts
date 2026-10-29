@@ -219,6 +219,20 @@ describe('EtchPanel · 双升', () => {
 		});
 	}
 
+	/** 用一笔手动账把两队级数摆到指定值（只为展示/预览，不参与庄家推导）。 */
+	function atLevels(game: Game, team0: number, team1: number): Game {
+		return appendEntry(game, {
+			id: newId(),
+			seq: nextSeq(game),
+			ts: 1,
+			kind: 'manual',
+			lines: game.players.map((p, seat) => ({
+				playerId: p.id,
+				delta: seat % 2 === 0 ? team0 : team1
+			}))
+		});
+	}
+
 	it('首局必须点庄家；40 分 → 庄家队 +1，meta 落笔', async () => {
 		const game = mkGame(SS());
 		expect(declarerTeamOf(game)).toBe(0);
@@ -350,5 +364,56 @@ describe('EtchPanel · 双升', () => {
 		render(EtchPanel, { game: mkGame(SS()), onetch: () => {} });
 		const found = await page.getByTestId('rollback-toggle').elements();
 		expect(found.length).toBe(0);
+	});
+
+	it('A 必打：K 庄家 0 分预览截到 +1，刻入同笔', async () => {
+		const rounds: RoundResult[] = [];
+		const game = atLevels(mkGame(SS({ mustPlay: 'A', firstDeclarer: 'p1' })), 11, 0);
+		render(EtchPanel, { game, onetch: (r) => rounds.push(r) });
+
+		await page.getByTestId('defenders-score').fill('0');
+		await expect.element(page.getByTestId('ss-preview')).toHaveTextContent('庄家升 1 级（A 必打）');
+		await page.getByTestId('etch-submit').click();
+
+		expect(rounds).toEqual([
+			{
+				lines: [
+					{ playerId: 'p1', delta: 1 },
+					{ playerId: 'p3', delta: 1 }
+				],
+				note: '0→D+1→A',
+				meta: { kind: 'shuangsheng', declarer: 'p1', declarerTeam: 0, defendersScore: 0 }
+			}
+		]);
+	});
+
+	it('A 必打：A 做闲家 200 分预览只换庄，刻入 +0', async () => {
+		const rounds: RoundResult[] = [];
+		const game = atLevels(mkGame(SS({ mustPlay: 'A', firstDeclarer: 'p1' })), 0, 12);
+		render(EtchPanel, { game, onetch: (r) => rounds.push(r) });
+
+		await page.getByTestId('defenders-score').fill('200');
+		await expect
+			.element(page.getByTestId('ss-preview'))
+			.toHaveTextContent('闲家上台，只换庄（A 必打）');
+		await page.getByTestId('etch-submit').click();
+
+		expect(rounds).toEqual([
+			{
+				lines: [
+					{ playerId: 'p2', delta: 0 },
+					{ playerId: 'p4', delta: 0 }
+				],
+				note: '200→X+0→A',
+				meta: { kind: 'shuangsheng', declarer: 'p1', declarerTeam: 0, defendersScore: 200 }
+			}
+		]);
+	});
+
+	it('A 必打：庄家在 A 时显示必打 badge', async () => {
+		const game = atLevels(mkGame(SS({ mustPlay: 'A', firstDeclarer: 'p1' })), 12, 0);
+		render(EtchPanel, { game, onetch: () => {} });
+
+		await expect.element(page.getByTestId('ss-must-play-badge')).toHaveTextContent('A 必打');
 	});
 });

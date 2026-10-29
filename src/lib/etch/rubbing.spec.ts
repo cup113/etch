@@ -82,6 +82,31 @@ describe('拓片', () => {
 		}
 	});
 
+	it('必打字段随拓片往返；未知值被拒', () => {
+		const game = newGame({
+			templateId: 'shuangsheng',
+			variant: {
+				kind: 'shuangsheng',
+				levelsAt80: 0,
+				defenderCapScore: 0,
+				grandWinBonus: false,
+				allowRollback: false,
+				firstDeclarerTeam: 0,
+				mustPlay: 'JA'
+			},
+			players: [
+				{ id: 'p1', name: '甲' },
+				{ id: 'p2', name: '乙' },
+				{ id: 'p3', name: '丙' },
+				{ id: 'p4', name: '丁' }
+			]
+		});
+		expect(unrub(rub(game)).variant).toEqual(game.variant);
+		const bad = JSON.parse(rub(game));
+		bad.game.variant.mustPlay = 'J';
+		expect(() => unrub(JSON.stringify(bad))).toThrow(/校验失败/);
+	});
+
 	it('旧 v1 掼蛋拓片（无 levelsPerSingleDown）导入回落为旧行为', () => {
 		const g = newGame({
 			templateId: 'guandan',
