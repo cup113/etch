@@ -3,6 +3,16 @@
 本项目的重要变更都记在这里。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循[语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.5.0] - 2026-10-29
+
+### Added
+
+- **双升必打**：开碑可选「全都不必打 / A 必打 / J、A 必打」。必打级不能跳过：升级最多停在该级，必须做庄打成才能继续；A 必打时只有做庄打成 A 才算过 A。例：打 K 时闲家拿 200 分只升到 A，下一局打 A
+
+### Compatibility
+
+- 拓片版本保持 v1：`variant.mustPlay` 是新增可选字段，旧碑缺省按「全都不必打」；旧版 App 打开新拓片会忽略该字段
+
 ## [0.4.0] - 2026-10-29
 
 ### Added
@@ -87,6 +97,7 @@
 - 自适应图标的前景是近白横杠，而模板底色是纯白——在 API 26+ 上等于没有图标
 - `navigator.vibrate` 在 Android WebView 里缺 `VIBRATE` 权限是静默无声的，补上
 
+[0.5.0]: https://github.com/cup113/etch/releases/tag/v0.5.0
 [0.4.0]: https://github.com/cup113/etch/releases/tag/v0.4.0
 [0.3.0]: https://github.com/cup113/etch/releases/tag/v0.3.0
 [0.2.0]: https://github.com/cup113/etch/releases/tag/v0.2.0

@@ -1,7 +1,7 @@
 {
 	"name": "etch",
 	"private": true,
-	"version": "0.4.0",
+	"version": "0.5.0",
 	"description": "Etch — Scores that never vanish. Offline-first scorekeeper for card tables.",
 	"license": "MIT",
 	"packageManager": "pnpm@11.22.0",
