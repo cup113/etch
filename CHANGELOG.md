@@ -3,6 +3,25 @@
 本项目的重要变更都记在这里。格式参考 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循[语义化版本](https://semver.org/lang/zh-CN/)。
 
+## [0.4.0] - 2026-10-29
+
+### Added
+
+- **双升庄家记到人**：刻入时点本局坐庄的人（不再只记队）；碑面「下一局」条显示下一局庄家。轮庄局按「升 → 对家、下台 → 下家」自动流转；亮牌 / 指定局每局选；指定局可在上一笔预存「下局庄家」，封盘恢复仍在
+- **掼蛋名次与进贡**：刻入改成按出完顺序点头游 → 末游（第 4 人自动补）；碑面显示上局名次，并按名次推出下一局进贡关系（双下 / 单下 / 1+4 无进贡）。只提示关系与规则，不记具体贡牌、不落抗贡状态
+- 开碑页双升变体新增**庄家流转**（轮庄 / 亮牌 / 指定）与**首庄**（人）
+
+### Changed
+
+- 双升刻入由「选庄家队」改为「选本局庄家（人）」；首局 / 旧碑第一次刻入必须点一次人
+- 掼蛋刻入由「胜队 + 同伴名次」改为「出完顺序」；不再有一键默认值，避免默默记错
+
+### Compatibility
+
+- 拓片版本保持 v1：新增的都是可选字段，旧拓片照常可读
+- 旧双升笔没有 `declarer` → 下一局回落到「只知队」；旧掼蛋笔没有 `meta` → 不显示名次 / 进贡
+- 旧版 App 打开新拓片会忽略新增字段；`declarerTeam` / `defendersScore` / `lines` 形状未变
+
 ## [0.3.0] - 2026-10-28
 
 ### Added
@@ -68,6 +87,7 @@
 - 自适应图标的前景是近白横杠，而模板底色是纯白——在 API 26+ 上等于没有图标
 - `navigator.vibrate` 在 Android WebView 里缺 `VIBRATE` 权限是静默无声的，补上
 
+[0.4.0]: https://github.com/cup113/etch/releases/tag/v0.4.0
 [0.3.0]: https://github.com/cup113/etch/releases/tag/v0.3.0
 [0.2.0]: https://github.com/cup113/etch/releases/tag/v0.2.0
 [0.1.0]: https://github.com/cup113/etch/releases/tag/v0.1.0
