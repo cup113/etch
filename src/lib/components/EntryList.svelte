@@ -66,37 +66,50 @@
 					{/if}
 				</button>
 				{#if expanded === entry.id}
-					<div class="mt-2 flex items-center justify-between gap-2 border-t border-stone-200 pt-2">
-						<div class="min-w-0 space-y-0.5">
-							{#if entry.note}
-								<span class="block text-xs text-stone-500 tabular">{entry.note}</span>
-							{/if}
-							{#if ssMeta && (ssMeta.declarer || ssMeta.nextDeclarer)}
-								<span class="block text-xs text-stone-500" data-testid="entry-meta-{entry.id}">
-									{#if ssMeta.declarer}
-										{t('entryDealer', { name: nameOf(game, ssMeta.declarer) })}
-									{/if}
-									{#if ssMeta.nextDeclarer}
-										<span class="ml-2">
-											{t('entryNextDealer', { name: nameOf(game, ssMeta.nextDeclarer) })}
-										</span>
-									{/if}
-								</span>
-							{:else if gdMeta}
-								<span class="block text-xs text-stone-500" data-testid="entry-meta-{entry.id}">
-									{t('entryFinish', {
-										first: nameOf(game, gdMeta.finish[0]),
-										second: nameOf(game, gdMeta.finish[1]),
-										third: nameOf(game, gdMeta.finish[2]),
-										last: nameOf(game, gdMeta.finish[3])
-									})}
-								</span>
+					<div class="mt-2 border-t border-stone-200 pt-2">
+						<div class="flex items-start justify-between gap-2">
+							<div class="min-w-0 space-y-0.5">
+								{#if entry.note}
+									<span class="block text-xs text-stone-500 tabular">{entry.note}</span>
+								{/if}
+								{#if ssMeta && (ssMeta.declarer || ssMeta.nextDeclarer)}
+									<span class="block text-xs text-stone-500" data-testid="entry-meta-{entry.id}">
+										{#if ssMeta.declarer}
+											{t('entryDealer', { name: nameOf(game, ssMeta.declarer) })}
+										{/if}
+										{#if ssMeta.nextDeclarer}
+											<span class="ml-2">
+												{t('entryNextDealer', { name: nameOf(game, ssMeta.nextDeclarer) })}
+											</span>
+										{/if}
+									</span>
+								{:else if gdMeta}
+									<span class="block text-xs text-stone-500" data-testid="entry-meta-{entry.id}">
+										{t('entryFinish', {
+											first: nameOf(game, gdMeta.finish[0]),
+											second: nameOf(game, gdMeta.finish[1]),
+											third: nameOf(game, gdMeta.finish[2]),
+											last: nameOf(game, gdMeta.finish[3])
+										})}
+									</span>
+								{/if}
+							</div>
+							{#if !chiseled && confirming !== entry.id}
+								<button
+									type="button"
+									class="shrink-0 etch-chip"
+									onclick={() => (confirming = entry.id)}
+									data-testid="chisel-ask-{entry.id}"
+								>
+									{t('chiselAction')}
+								</button>
 							{/if}
 						</div>
-						{#if !chiseled}
-							{#if confirming === entry.id}
-								<div class="flex shrink-0 items-center gap-2 text-xs">
-									<span class="text-stone-600">{t('chiselConfirm')}</span>
+						{#if !chiseled && confirming === entry.id}
+							<!-- 确认要说的是一整句话：它自己占一行换行，按钮落在下一行，窄屏上才不会被撑出屏。 -->
+							<div class="mt-2" data-testid="chisel-confirm-box-{entry.id}">
+								<p class="text-xs leading-relaxed text-stone-600">{t('chiselConfirm')}</p>
+								<div class="mt-2 flex gap-2">
 									<button
 										type="button"
 										class="etch-chip etch-chip-on"
@@ -118,16 +131,7 @@
 										{t('cancel')}
 									</button>
 								</div>
-							{:else}
-								<button
-									type="button"
-									class="shrink-0 etch-chip"
-									onclick={() => (confirming = entry.id)}
-									data-testid="chisel-ask-{entry.id}"
-								>
-									{t('chiselAction')}
-								</button>
-							{/if}
+							</div>
 						{/if}
 					</div>
 				{/if}
