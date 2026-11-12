@@ -166,7 +166,7 @@ describe('拓片', () => {
 		expect(restored.entries[0].meta).toEqual(meta);
 	});
 
-	it('碑名随拓片往返保留；非字符串碑名被拒', () => {
+	it('石板名随拓片往返保留；非字符串石板名被拒', () => {
 		const g = { ...mkGame(), name: '周五晚' };
 		expect(unrub(rub(g)).name).toBe('周五晚');
 

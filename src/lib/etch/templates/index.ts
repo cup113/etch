@@ -1,5 +1,5 @@
 // 模板注册表与模板契约。模板 = 规则形状 + 变体参数（CONTEXT.md），不是规则引擎：
-// 每个模板只提供"一局结果 → 笔的行"的计算函数与终局检测，碑不执法。
+// 每个模板只提供"一局结果 → 笔的行"的计算函数与终局检测，石板不执法。
 
 import type { EntryMeta, Game, PlayerId, Proclamation, TemplateId, Variant } from '../types';
 import { generic } from './generic';

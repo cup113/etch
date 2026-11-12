@@ -1,5 +1,5 @@
 <script lang="ts">
-	// 碑面：总分（刻入动效）→ 宣告 → 刻入面板 → 刻痕流（凿除）。碑务菜单：改名 / 拓片导出 / 磨碑。
+	// 板面：总分（刻入动效）→ 宣告 → 刻入面板 → 刻痕流（凿除）。本板菜单：改名 / 拓片导出 / 磨板。
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
@@ -195,7 +195,7 @@
 	</div>
 {:else if etchState.ready}
 	<div class="py-16 text-center">
-		<p class="text-sm font-semibold text-stone-500">碑不在。可能已被磨去。</p>
+		<p class="text-sm font-semibold text-stone-500">{t('boardMissing')}</p>
 		<a href={resolve('/')} class="mt-4 inline-block text-sm font-bold text-stone-900 underline"
 			>‹ {t('back')}</a
 		>

@@ -1,12 +1,12 @@
 import { expect, test } from '@playwright/test';
 
-// e2e 针对构建产物（webServer: build + preview）：开碑 → 刻 → 持久 → 凿 → 拓片 → 语言 → 断网。
+// e2e 针对构建产物（webServer: build + preview）：开刻 → 刻 → 持久 → 凿 → 拓片 → 语言 → 断网。
 
-test('斗地主全流程：开碑、刻一局、刷新持久、凿除冲正、磨碑', async ({ page }) => {
+test('斗地主全流程：开刻、刻一局、刷新持久、凿除冲正、磨板', async ({ page }) => {
 	await page.goto('/');
 	await expect(page.getByTestId('brand')).toBeVisible();
 
-	// 开碑：3 名玩家（combobox 显式新建，名字顺手入册）
+	// 开刻：3 名玩家（combobox 显式新建，名字顺手入册）
 	await page.getByTestId('tpl-card-doudizhu').click();
 	const combo = page.getByTestId('player-combobox').locator('input');
 	for (const name of ['老张', '李四', '王五']) {
@@ -24,7 +24,7 @@ test('斗地主全流程：开碑、刻一局、刷新持久、凿除冲正、�
 	await expect(page.getByTestId('totals')).toContainText('160');
 	await expect(page.getByTestId('totals')).toContainText('-80');
 
-	// 刷新：碑还在（IndexedDB 持久，ADR-0002）
+	// 刷新：石板还在（IndexedDB 持久，ADR-0002）
 	await page.reload();
 	await expect(page.getByTestId('totals')).toContainText('160');
 
@@ -35,7 +35,7 @@ test('斗地主全流程：开碑、刻一局、刷新持久、凿除冲正、�
 	await expect(page.getByTestId('totals')).toContainText('0');
 	await expect(page.getByTestId('entries').getByText('已凿除')).toBeVisible();
 
-	// 磨碑：两步确认后回首页，碑林清空
+	// 磨板：两步确认后回首页，板架清空
 	await page.getByTestId('tablet-menu').click();
 	await page.getByTestId('erase-ask').click();
 	await page.getByTestId('erase-confirm-yes').click();
@@ -43,7 +43,7 @@ test('斗地主全流程：开碑、刻一局、刷新持久、凿除冲正、�
 	await expect(page.getByTestId('history-empty')).toBeVisible();
 });
 
-test('碑名：开碑可名、碑面可改、刷新后仍在、碑林显示', async ({ page }) => {
+test('石板名：开刻可名、板面可改、刷新后仍在、板架显示', async ({ page }) => {
 	await page.goto('/');
 	await page.getByTestId('tpl-card-generic').click();
 	await page.getByTestId('tablet-name').fill('周五晚');
@@ -54,29 +54,29 @@ test('碑名：开碑可名、碑面可改、刷新后仍在、碑林显示', as
 	}
 	await page.getByTestId('start-tablet').click();
 
-	// 碑面标题 = 碑名，模板名退到副行
+	// 板面标题 = 石板名，模板名退到副行
 	await expect(page.getByTestId('board-title')).toContainText('周五晚');
 	await expect(page.getByTestId('board-template')).toContainText('通用');
 
-	// 碑务 → 改名
+	// 本板 → 改名
 	await page.getByTestId('tablet-menu').click();
 	await page.getByTestId('rename-ask').click();
 	await page.getByTestId('rename-input').fill('周六午');
 	await page.getByTestId('rename-confirm').click();
 	await expect(page.getByTestId('board-title')).toContainText('周六午');
 
-	// 刷新后仍在（碑名随碑落盘）
+	// 刷新后仍在（石板名随石板落盘）
 	await page.reload();
 	await expect(page.getByTestId('board-title')).toContainText('周六午');
 
-	// 碑林卡片：标题是碑名，副行带模板名
+	// 板架卡片：标题是石板名，副行带模板名
 	await page.goto('/');
 	const card = page.locator('[data-testid^="game-card-"]').first();
 	await expect(card).toContainText('周六午');
 	await expect(card).toContainText('通用');
 });
 
-test('UNO 出局制变体：宣告出局，且不锁刻入（碑不执法）', async ({ page }) => {
+test('UNO 出局制变体：宣告出局，且不锁刻入（石板不执法）', async ({ page }) => {
 	await page.goto('/');
 	await page.getByTestId('tpl-card-uno').click();
 	await page.getByTestId('uno-elimination').click();
@@ -99,13 +99,13 @@ test('UNO 出局制变体：宣告出局，且不锁刻入（碑不执法）', a
 	await expect(page.getByText('乙 出局（300 分）')).toBeVisible();
 	await expect(page.getByText('只剩 甲 未触线')).toBeVisible();
 
-	// 碑不执法：宣告后仍可继续刻
+	// 石板不执法：宣告后仍可继续刻
 	await remB.fill('10');
 	await page.getByTestId('etch-submit').click();
 	await expect(page.getByTestId('entries')).toContainText('+10');
 });
 
-test('拓片往返：导出 → 磨碑 → 导入 → 总分一致', async ({ page }) => {
+test('拓片往返：导出 → 磨板 → 导入 → 总分一致', async ({ page }) => {
 	await page.goto('/');
 	await page.getByTestId('tpl-card-generic').click();
 	const combo = page.getByTestId('player-combobox').locator('input');
@@ -115,7 +115,7 @@ test('拓片往返：导出 → 磨碑 → 导入 → 总分一致', async ({ pa
 	}
 	await page.getByTestId('start-tablet').click();
 
-	// 通用碑刻一笔：+100 / -100
+	// 通用石板刻一笔：+100 / -100
 	const inputs = page.getByTestId('etch-panel').locator('input[type="number"]');
 	await inputs.first().fill('100');
 	await inputs.nth(1).fill('-100');
@@ -131,7 +131,7 @@ test('拓片往返：导出 → 磨碑 → 导入 → 总分一致', async ({ pa
 	const rubbingPath = test.info().outputPath('rubbing.json');
 	await download.saveAs(rubbingPath);
 
-	// 磨掉这块碑，再从拓片恢复
+	// 磨掉这块石板，再从拓片恢复
 	await page.getByTestId('erase-ask').click();
 	await page.getByTestId('erase-confirm-yes').click();
 	await expect(page.getByTestId('history-empty')).toBeVisible();
@@ -140,7 +140,7 @@ test('拓片往返：导出 → 磨碑 → 导入 → 总分一致', async ({ pa
 	await expect(page.getByTestId('import-ok')).toBeVisible();
 	await expect(page.getByTestId('history-empty')).toBeHidden();
 
-	// 打开恢复的碑：总分回来了
+	// 打开恢复的石板：总分回来了
 	await page.locator('[data-testid^="game-card-"]').first().click();
 	await expect(page.getByTestId('totals')).toContainText('100');
 	await expect(page.getByTestId('totals')).toContainText('-100');
@@ -265,7 +265,7 @@ test('掼蛋：按出完顺序记名次，推下一局进贡；刷新仍在；�
 	await expect(page.getByTestId('round-setup')).toBeHidden();
 });
 
-test('CABO：小门槛宣告最低胜，碑不执法仍可刻', async ({ page }) => {
+test('CABO：小门槛宣告最低胜，石板不执法仍可刻', async ({ page }) => {
 	await page.goto('/');
 	await page.getByTestId('tpl-card-cabo').click();
 	await page.getByTestId('cabo-threshold').fill('50');
@@ -285,12 +285,79 @@ test('CABO：小门槛宣告最低胜，碑不执法仍可刻', async ({ page })
 	await expect(page.getByTestId('proclamations')).toBeVisible();
 	await expect(page.getByText('终局：甲 以最低分获胜（有人到 50）')).toBeVisible();
 
-	// 碑不执法：宣告后仍可继续刻
+	// 石板不执法：宣告后仍可继续刻
 	await page.getByTestId('etch-panel').getByRole('button', { name: '乙' }).click();
 	const rowA = page.getByTestId('etch-panel').locator('label', { hasText: '甲' }).locator('input');
 	await rowA.fill('10');
 	await page.getByTestId('etch-submit').click();
 	await expect(page.getByTestId('entries')).toContainText('+10');
+});
+
+test('变体沿用：下次开同模板的石板带回上次的变体（首庄不沿用）', async ({ page }) => {
+	// 第一次开 UNO：改成出局制、出局线 250
+	await page.goto('/new/uno');
+	await page.getByTestId('uno-elimination').click();
+	await page.getByTestId('uno-threshold').fill('250');
+	const unoCombo = page.getByTestId('player-combobox').locator('input');
+	for (const name of ['甲', '乙']) {
+		await unoCombo.fill(name);
+		await unoCombo.press('Enter');
+	}
+	await page.getByTestId('start-tablet').click();
+	await expect(page.getByTestId('board-title')).toBeVisible();
+
+	// 再开一块 UNO：变体已经是上次那套
+	await page.goto('/new/uno');
+	await expect(page.getByTestId('uno-elimination')).toHaveClass(/etch-chip-on/);
+	await expect(page.getByTestId('uno-threshold')).toHaveValue('250');
+
+	// 双升：必打级沿用，首庄不沿用 —— 首庄是人，座位随这批玩家换
+	await page.goto('/new/shuangsheng');
+	await page.getByTestId('ss-must-play-a').click();
+	const ssCombo = page.getByTestId('player-combobox').locator('input');
+	for (const name of ['甲', '乙', '丙', '丁']) {
+		await ssCombo.fill(name);
+		await ssCombo.press('Enter');
+	}
+	await page.getByTestId('first-declarer-seat-0').click();
+	await page.getByTestId('start-tablet').click();
+	await expect(page.getByTestId('board-title')).toBeVisible();
+
+	await page.goto('/new/shuangsheng');
+	await expect(page.getByTestId('ss-must-play-a')).toHaveClass(/etch-chip-on/);
+	const ssCombo2 = page.getByTestId('player-combobox').locator('input');
+	for (const name of ['老张', '李四', '王五', '赵六']) {
+		await ssCombo2.fill(name);
+		await ssCombo2.press('Enter');
+	}
+	await expect(page.getByTestId('first-declarer-seat-0')).not.toHaveClass(/etch-chip-on/);
+});
+
+test('窄屏：点开凿除确认不把页面撑宽（360 宽）', async ({ page }) => {
+	// 确认语是一整句中文，曾经和两个按钮挤在同一行里，把 360 宽的屏撑到 473
+	await page.setViewportSize({ width: 360, height: 740 });
+	await page.goto('/new/generic');
+	const combo = page.getByTestId('player-combobox').locator('input');
+	for (const name of ['老张', '李四']) {
+		await combo.fill(name);
+		await combo.press('Enter');
+	}
+	await page.getByTestId('start-tablet').click();
+	await expect(page.getByTestId('board-title')).toBeVisible();
+
+	const inputs = page.getByTestId('etch-panel').locator('input[type="number"]');
+	await inputs.first().fill('30');
+	await inputs.nth(1).fill('-30');
+	await page.getByTestId('etch-submit').click();
+
+	await page.getByTestId('entries').getByText('+30 老张').click();
+	await page.getByRole('button', { name: '凿除' }).first().click(); // 展开确认
+	await expect(page.getByRole('button', { name: '取消' })).toBeVisible();
+
+	const overflow = await page.evaluate(
+		() => document.documentElement.scrollWidth - document.documentElement.clientWidth
+	);
+	expect(overflow).toBeLessThanOrEqual(0);
 });
 
 test('PWA：断网后仍可打开（service worker）', async ({ page, context }) => {

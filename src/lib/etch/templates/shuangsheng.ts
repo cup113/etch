@@ -12,7 +12,7 @@
 // 必打（默认关，none / A / JA）：级牌闸门。升级最多停在该队最近的必打级；停住后必须
 // 做庄打成这一级才能继续（A 必打：只有做庄打成 A 才算过 A）。闸门在刻入时把升级截进
 // 同一笔的增减行，折叠仍只做加法；不追溯重算已刻的笔。
-// 级牌阶梯 2..A 与掼蛋共用（levels.ts）；过 A 宣告封顶，碑不执法。
+// 级牌阶梯 2..A 与掼蛋共用（levels.ts）；过 A 宣告封顶，石板不执法。
 
 import type {
 	Entry,
@@ -81,7 +81,7 @@ const MUST_PLAY_GATES: Record<ShuangshengMustPlay, readonly number[]> = {
 	JA: [LEVEL_J, LEVEL_A]
 };
 
-/** 变体的必打级；缺省/未知值一律按 none（旧碑兼容）。 */
+/** 变体的必打级；缺省/未知值一律按 none（旧石板兼容）。 */
 export function mustPlayOf(variant: Pick<ShuangshengVariant, 'mustPlay'>): ShuangshengMustPlay {
 	return variant.mustPlay === 'A' || variant.mustPlay === 'JA' ? variant.mustPlay : 'none';
 }
@@ -133,9 +133,9 @@ export function shuangshengRound(
 	if (players.length !== 4) throw new Error('双升需要恰好 4 人');
 	assertScore(input.defendersScore);
 	const declarerSeat = players.findIndex((p) => p.id === input.declarer);
-	if (declarerSeat < 0) throw new Error('本局庄家不在碑上');
+	if (declarerSeat < 0) throw new Error('本局庄家不在石板上');
 	if (input.nextDeclarer && !players.some((p) => p.id === input.nextDeclarer)) {
-		throw new Error('下局庄家不在碑上');
+		throw new Error('下局庄家不在石板上');
 	}
 	if (input.rollback && !variant.allowRollback) {
 		throw new Error('变体未允许倒级，不能回退');
@@ -197,7 +197,7 @@ export function shuangshengRound(
 	};
 }
 
-/** 下一局庄家的解析结果：known = 人和队；team-only = 只知队（旧碑）；pending = 亮牌/指定局待选。 */
+/** 下一局庄家的解析结果：known = 人和队；team-only = 只知队（旧石板）；pending = 亮牌/指定局待选。 */
 export type NextDealer =
 	| {
 			kind: 'known';
@@ -208,7 +208,7 @@ export type NextDealer =
 	| { kind: 'team-only'; team: 0 | 1 }
 	| { kind: 'pending'; flow: 'reveal' | 'designate' };
 
-/** 变体的庄家流转；缺省/未知值一律按 rotate（旧碑兼容）。 */
+/** 变体的庄家流转；缺省/未知值一律按 rotate（旧石板兼容）。 */
 export function declarerFlowOf(variant: ShuangshengVariant): ShuangshengDeclarerFlow {
 	return variant.declarerFlow === 'reveal' || variant.declarerFlow === 'designate'
 		? variant.declarerFlow

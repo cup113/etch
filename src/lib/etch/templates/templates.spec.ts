@@ -185,7 +185,7 @@ describe('掼蛋：名次、进级与过A', () => {
 		]);
 	});
 
-	it('旧碑回落：levelsPerSingleDown 缺省按 1；旧值 1 容忍', () => {
+	it('旧石板回落：levelsPerSingleDown 缺省按 1；旧值 1 容忍', () => {
 		const g = mkGame('guandan', { kind: 'guandan', levelsPerDoubleDown: 2 }, 4);
 		const r3 = guandanRound({ finish: ['p1', 'p2', 'p3', 'p4'] }, g.players, g.variant);
 		expect(r3.lines).toEqual([
@@ -200,7 +200,7 @@ describe('掼蛋：名次、进级与过A', () => {
 		]);
 	});
 
-	it('座位成队 0-2 / 1-3；恰好 4 人；顺序必须唯一且都在碑上', () => {
+	it('座位成队 0-2 / 1-3；恰好 4 人；顺序必须唯一且都在石板上', () => {
 		expect([0, 1, 2, 3].map(teamOfSeat)).toEqual([0, 1, 0, 1]);
 		const g3 = mkGame(
 			'guandan',
@@ -392,7 +392,7 @@ describe('双升：分数换算', () => {
 		).toThrow(/倒级/);
 	});
 
-	it('分数越界 / 非整数拒绝；庄家必须在碑上', () => {
+	it('分数越界 / 非整数拒绝；庄家必须在石板上', () => {
 		for (const bad of [-1, 201, 1.5]) {
 			expect(() =>
 				shuangshengRound({ declarer: 'p1', defendersScore: bad }, P4, V(), L0)

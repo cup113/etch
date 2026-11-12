@@ -32,7 +32,7 @@ export function doudizhuRound(input: DoudizhuInput, players: PlayerRef[]): Round
 			{ playerId: input.landlord, delta: landlordDelta },
 			...farmers.map((p) => ({ playerId: p.id, delta: farmerDelta }))
 		],
-		// note 必须语言中立（碑上持久存储，两种界面语言都要可读）
+		// note 必须语言中立（石板上持久存储，两种界面语言都要可读）
 		note: `${input.base}×${input.multiplier}`
 	};
 }

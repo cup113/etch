@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="zh-CN">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>变体 B · 桌</title>
+		<style>
+			:root {
+				--ink: #0c0a09;
+				--ink2: #44403c;
+				--ink3: #78716c;
+				--line: #d6d3d1;
+				--card: #fafaf9;
+				--bg: #f5f5f4;
+			}
+			* {
+				box-sizing: border-box;
+			}
+			body {
+				margin: 0;
+				padding: 20px 16px 48px;
+				background: #fff;
+				color: var(--ink);
+				font-family:
+					ui-sans-serif,
+					system-ui,
+					-apple-system,
+					'Segoe UI',
+					'PingFang SC',
+					'Microsoft YaHei',
+					sans-serif;
+				line-height: 1.55;
+			}
+			h1 {
+				font-size: 20px;
+				margin: 0 0 2px;
+				letter-spacing: -0.01em;
+			}
+			.lede {
+				color: var(--ink3);
+				font-size: 13px;
+				margin: 0 0 20px;
+			}
+			h2 {
+				font-size: 11px;
+				letter-spacing: 0.14em;
+				text-transform: uppercase;
+				color: var(--ink3);
+				margin: 28px 0 10px;
+			}
+			table {
+				border-collapse: collapse;
+				width: 100%;
+				font-size: 13px;
+			}
+			th,
+			td {
+				text-align: left;
+				padding: 6px 8px;
+				border-bottom: 1px solid var(--line);
+				vertical-align: top;
+			}
+			th {
+				font-size: 11px;
+				letter-spacing: 0.08em;
+				text-transform: uppercase;
+				color: var(--ink3);
+			}
+			td.old {
+				color: var(--ink3);
+				white-space: nowrap;
+			}
+			td.new {
+				font-weight: 650;
+			}
+			.phones {
+				display: flex;
+				flex-wrap: wrap;
+				gap: 18px;
+			}
+			.phone {
+				width: 320px;
+				flex: 0 0 320px;
+				background: var(--bg);
+				border: 1px solid var(--line);
+				border-radius: 14px;
+				padding: 16px 14px;
+			}
+			.phone .cap {
+				font-size: 11px;
+				letter-spacing: 0.1em;
+				text-transform: uppercase;
+				color: var(--ink3);
+				margin: -6px 0 10px;
+			}
+			.brand {
+				font-size: 30px;
+				font-weight: 900;
+				letter-spacing: -0.03em;
+				line-height: 1.1;
+			}
+			.sub {
+				font-size: 13px;
+				color: var(--ink3);
+				margin-top: 2px;
+			}
+			.sec {
+				font-size: 11px;
+				font-weight: 700;
+				letter-spacing: 0.14em;
+				color: var(--ink3);
+				text-transform: uppercase;
+				margin: 18px 0 8px;
+			}
+			.grid2 {
+				display: grid;
+				grid-template-columns: 1fr 1fr;
+				gap: 8px;
+			}
+			.card {
+				border: 1px solid var(--line);
+				background: var(--card);
+				border-radius: 8px;
+				padding: 12px;
+				font-size: 16px;
+				font-weight: 900;
+			}
+			.empty {
+				border: 1px dashed var(--line);
+				border-radius: 8px;
+				padding: 12px;
+				font-size: 13px;
+				color: var(--ink3);
+			}
+			.h1 {
+				font-size: 24px;
+				font-weight: 900;
+				letter-spacing: -0.02em;
+			}
+			.back {
+				font-size: 11px;
+				font-weight: 700;
+				letter-spacing: 0.14em;
+				color: var(--ink3);
+			}
+			.input {
+				border: 1px solid #a8a29e;
+				background: var(--card);
+				border-radius: 6px;
+				padding: 8px 10px;
+				font-size: 14px;
+				color: var(--ink3);
+			}
+			.btn {
+				display: block;
+				margin-top: 14px;
+				background: var(--ink);
+				color: #fafaf9;
+				border-radius: 8px;
+				padding: 12px;
+				text-align: center;
+				font-weight: 800;
+				font-size: 16px;
+				letter-spacing: 0.1em;
+			}
+			.row {
+				display: flex;
+				align-items: center;
+				justify-content: space-between;
+				border: 1px solid var(--line);
+				background: var(--card);
+				border-radius: 8px;
+				padding: 10px 12px;
+				font-size: 14px;
+				margin-bottom: 8px;
+			}
+			.chip {
+				border: 1px solid var(--ink);
+				background: var(--ink);
+				color: #fafaf9;
+				border-radius: 6px;
+				padding: 5px 10px;
+				font-size: 13px;
+				font-weight: 600;
+				white-space: nowrap;
+			}
+			.chip.ghost {
+				background: var(--card);
+				color: var(--ink2);
+				border-color: #a8a29e;
+			}
+			.hint {
+				font-size: 12px;
+				color: var(--ink3);
+			}
+			.warn {
+				background: var(--ink);
+				color: #fafaf9;
+				font-size: 12px;
+				padding: 9px 10px;
+				border-radius: 6px;
+				text-align: center;
+			}
+			.cost {
+				font-size: 13px;
+				color: var(--ink2);
+				border-left: 3px solid var(--ink);
+				padding-left: 10px;
+				margin: 6px 0;
+			}
+			.mono {
+				font-variant-numeric: tabular-nums;
+			}
+			.confirm {
+				border-top: 1px solid #e7e5e4;
+				margin-top: 8px;
+				padding-top: 8px;
+			}
+			.confirm p {
+				font-size: 12px;
+				color: var(--ink2);
+				margin: 0 0 8px;
+			}
+		</style>
+	</head>
+	<body>
+		<h1>变体 B · 把「碑」换成「桌」</h1>
+		<p class="lede">
+			碑不叫碑了，叫一桌。手机就在牌桌上传来传去 ——「开桌」「散桌」是牌桌上现成的说法，
+			刻的动词继续留着。
+		</p>
+
+		<h2>逐条文案</h2>
+		<table>
+			<thead>
+				<tr>
+					<th>位置</th>
+					<th>现在</th>
+					<th>变体 B</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td>首页入口</td>
+					<td class="old">开新碑</td>
+					<td class="new">开桌</td>
+				</tr>
+				<tr>
+					<td>首页列表标题</td>
+					<td class="old">碑林</td>
+					<td class="new">历史（比喻放弃）</td>
+				</tr>
+				<tr>
+					<td>空列表</td>
+					<td class="old">还没有碑。开一局，刻下第一笔。</td>
+					<td class="new">还没开过桌。开一局，刻下第一笔。</td>
+				</tr>
+				<tr>
+					<td>读取中</td>
+					<td class="old">读碑中…</td>
+					<td class="new">载入中…</td>
+				</tr>
+				<tr>
+					<td>存储不可用</td>
+					<td class="old">临时碑：当前环境无法持久保存…</td>
+					<td class="new">临时桌：当前环境无法持久保存…</td>
+				</tr>
+				<tr>
+					<td>名字输入框</td>
+					<td class="old">碑名（可选）</td>
+					<td class="new">桌名（可选）</td>
+				</tr>
+				<tr>
+					<td>开碑页主按钮</td>
+					<td class="old">开碑</td>
+					<td class="new">开桌</td>
+				</tr>
+				<tr>
+					<td>碑面菜单名</td>
+					<td class="old">碑务</td>
+					<td class="new">本桌</td>
+				</tr>
+				<tr>
+					<td>导出 / 导入</td>
+					<td class="old">导出拓片 / 导入拓片</td>
+					<td class="new">导出备份 / 导入备份</td>
+				</tr>
+				<tr>
+					<td>销毁操作</td>
+					<td class="old">磨碑（整碑销毁）</td>
+					<td class="new">散桌（整桌销毁）</td>
+				</tr>
+				<tr>
+					<td>销毁确认</td>
+					<td class="old">磨碑将销毁这块碑的全部历史…</td>
+					<td class="new">散桌会销毁这一桌的全部历史…</td>
+				</tr>
+				<tr>
+					<td>导入成功</td>
+					<td class="old">拓片已恢复为碑。</td>
+					<td class="new">备份已恢复为一桌。</td>
+				</tr>
+				<tr>
+					<td>凿除确认</td>
+					<td class="old">…但永远留在碑上。</td>
+					<td class="new">…但永远留在这桌上。</td>
+				</tr>
+				<tr>
+					<td>找不到碑</td>
+					<td class="old">碑不在。可能已被磨去。</td>
+					<td class="new">这桌不在了。可能已经散了。</td>
+				</tr>
+				<tr>
+					<td>掼蛋说明</td>
+					<td class="old">数字可在开碑页改…</td>
+					<td class="new">数字可在开桌页改…</td>
+				</tr>
+			</tbody>
+		</table>
+		<p class="hint" style="margin-top: 10px">
+			不变：刻、笔、凿除、折叠、宣告、花名册。改的都是碑字家族，外加拓片要换名字。
+		</p>
+
+		<h2>放进界面的样子（真文案，360 宽的屏）</h2>
+		<div class="phones">
+			<div class="phone">
+				<p class="cap">首页</p>
+				<div class="brand">Etch</div>
+				<div class="sub">刻上去，就不消失。</div>
+				<div class="sec">开桌</div>
+				<div class="grid2">
+					<div class="card">通用</div>
+					<div class="card">UNO</div>
+					<div class="card">CABO</div>
+					<div class="card">斗地主</div>
+				</div>
+				<div class="sec">历史</div>
+				<div class="empty">还没开过桌。开一局，刻下第一笔。</div>
+			</div>
+
+			<div class="phone">
+				<p class="cap">开桌页 · 掼蛋</p>
+				<div class="back">‹ 返回</div>
+				<div class="h1" style="margin: 6px 0 14px">掼蛋</div>
+				<div class="input">桌名（可选）</div>
+				<div class="sec">变体</div>
+				<div class="row"><span>头游 + 二游（双下）</span><span class="mono">+3</span></div>
+				<div class="row"><span>头游 + 三游（单下）</span><span class="mono">+2</span></div>
+				<div class="btn">开桌</div>
+			</div>
+
+			<div class="phone">
+				<p class="cap">桌面 · 菜单展开</p>
+				<div style="display: flex; justify-content: space-between; align-items: baseline">
+					<div>
+						<div class="back">‹ 返回</div>
+						<div class="h1">周五晚 <span class="hint mono">11月12日</span></div>
+					</div>
+					<div class="chip ghost">⋯</div>
+				</div>
+				<div style="margin-top: 12px">
+					<div class="row">改名</div>
+					<div class="row">导出备份</div>
+					<div class="row" style="color: var(--ink3)">散桌（整桌销毁）</div>
+				</div>
+			</div>
+
+			<div class="phone">
+				<p class="cap">刻痕流 · 凿除确认（本轮同时修了这里的溢出）</p>
+				<div class="row"><span>第 1 刻</span><span class="mono">+30 甲 −30 乙</span></div>
+				<div
+					style="
+						border: 1px solid var(--line);
+						background: var(--card);
+						border-radius: 8px;
+						padding: 10px 12px;
+					"
+				>
+					<div style="display: flex; justify-content: space-between">
+						<span
+							style="font-size: 11px; font-weight: 700; letter-spacing: 0.1em; color: var(--ink3)"
+							>第 2 刻</span
+						>
+						<span style="font-size: 13px" class="mono">+160 老张 −80 李四</span>
+					</div>
+					<div class="confirm">
+						<p>凿掉这一笔？它将划掉显示、不再计分，但永远留在这桌上。</p>
+						<div style="display: flex; gap: 8px">
+							<span class="chip">凿除</span>
+							<span class="chip ghost">取消</span>
+						</div>
+					</div>
+				</div>
+				<div style="margin-top: 12px" class="warn">
+					临时桌：当前环境无法持久保存，关闭页面后数据将丢失。
+				</div>
+			</div>
+		</div>
+
+		<h2>代价</h2>
+		<p class="cost">
+			「拓片」失去落点：桌没有拓片可言，导出/导入只能退回「备份」——石头那一层气味从这里漏掉。
+		</p>
+		<p class="cost">「永远留在这桌上」有歧义：可以读成「这张牌还留在桌上」。凿除的意思会被读歪。</p>
+		<p class="cost">
+			「桌」在 CONTEXT.md 里曾被否决过一次 ——
+			那次是作为碑之上的一层分组（常客桌）；这次是同一个物件改名，位置不同，但要重新记进文档。
+		</p>
+	</body>
+</html>

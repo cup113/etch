@@ -23,7 +23,7 @@ const SS = (over: Partial<ShuangshengVariant> = {}): ShuangshengVariant => ({
 	...over
 });
 
-/** 造一块双升碑；entries 里只写庄家/队/分数，够推导下一局 */
+/** 造一块双升石板；entries 里只写庄家/队/分数，够推导下一局 */
 function ssGame(
 	variant: ShuangshengVariant,
 	entries: { declarer?: string; team: 0 | 1; score: number }[]

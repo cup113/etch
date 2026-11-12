@@ -1,4 +1,4 @@
-// 应用状态与动作：碑、花名册、设置。runes 模块（.svelte.ts），$effect 只存在于组件里。
+// 应用状态与动作：石板、花名册、设置。runes 模块（.svelte.ts），$effect 只存在于组件里。
 // 不变量：先落 IDB、再发布到内存状态 —— 因此"界面上看到的分数"永远已经写入磁盘，
 // 刷新/关页面不会丢（ADR-0002 的"永不消失"承诺在 UI 层的兑现方式）。
 
@@ -9,7 +9,7 @@ import type { EntryKind, Game, Player, PlayerId, PlayerRef, TemplateId, Variant 
 
 export interface EtchState {
 	ready: boolean;
-	/** IDB 不可用：本次会话的数据不持久（"临时碑"横幅） */
+	/** IDB 不可用：本次会话的数据不持久（"临时板"横幅） */
 	memoryOnly: boolean;
 	games: Game[];
 	roster: Player[];
@@ -32,8 +32,8 @@ export const etchState = $state<EtchState>({
 async function persistGame(game: Game): Promise<void> {
 	const plain = $state.snapshot(game) as Game;
 	await putGame(plain);
-	// 已存在的碑（改名、导入覆盖）原位替换：碑林按 createdAt 排序，不该被一次编辑顶到首位。
-	// 新碑（含导入的新拓片）按同一排序插入，与 loadGames 的结果保持一致。
+	// 已存在的石板（改名、导入覆盖）原位替换：板架按 createdAt 排序，不该被一次编辑顶到首位。
+	// 新石板（含导入的新拓片）按同一排序插入，与 loadGames 的结果保持一致。
 	if (etchState.games.some((g) => g.id === plain.id)) {
 		etchState.games = etchState.games.map((g) => (g.id === plain.id ? plain : g));
 	} else {
@@ -53,7 +53,7 @@ export async function initEtch(): Promise<void> {
 	etchState.ready = true;
 }
 
-// ---- 碑 ----
+// ---- 石板 ----
 
 export async function createTablet(
 	templateId: TemplateId,
@@ -66,7 +66,7 @@ export async function createTablet(
 	return game;
 }
 
-/** 改名：只是碑的元数据，不触碰追加式账本（笔与折叠都不动）。空白 = 回到无名碑。 */
+/** 改名：只是石板的元数据，不触碰追加式账本（笔与折叠都不动）。空白 = 回到无名石板。 */
 export async function renameTablet(gameId: string, name: string): Promise<void> {
 	const game = etchState.games.find((g) => g.id === gameId);
 	if (!game) throw new Error(`no tablet ${gameId}`);
@@ -77,7 +77,7 @@ export async function renameTablet(gameId: string, name: string): Promise<void> 
 	await persistGame(next);
 }
 
-/** 刻：把一局结果（或手工行）追加为一笔。校验失败抛 LedgerError，碑不动。 */
+/** 刻：把一局结果（或手工行）追加为一笔。校验失败抛 LedgerError，石板不动。 */
 export async function etch(
 	gameId: string,
 	round: RoundResult,
@@ -107,13 +107,13 @@ export async function chisel(gameId: string, entryId: string): Promise<Game> {
 	return next;
 }
 
-/** 磨碑：唯一销毁操作（CONTEXT.md）。拓片不受影响。 */
+/** 磨板：唯一销毁操作（CONTEXT.md）。拓片不受影响。 */
 export async function eraseTablet(gameId: string): Promise<void> {
 	await deleteGame(gameId);
 	etchState.games = etchState.games.filter((g) => g.id !== gameId);
 }
 
-/** 导入拓片：同 id 覆盖（同碑恢复），否则成为新碑。 */
+/** 导入拓片：同 id 覆盖（同石板恢复），否则成为新石板。 */
 export async function importRubbing(game: Game): Promise<void> {
 	await persistGame(game);
 }

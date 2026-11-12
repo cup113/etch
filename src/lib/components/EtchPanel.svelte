@@ -54,7 +54,7 @@
 	let genericDeltas = $state<Record<PlayerId, Entered>>({});
 
 	// ---- 斗地主 ----
-	// 初值取首位玩家即可：本组件只在碑面挂载一次，之后由用户选择驱动。
+	// 初值取首位玩家即可：本组件只在板面挂载一次，之后由用户选择驱动。
 	// svelte-ignore state_referenced_locally
 	let landlord = $state<PlayerId>(game.players[0]?.id ?? '');
 	let landlordWon = $state(true);

@@ -1,6 +1,6 @@
 // 掼蛋：队伍级数型。4 人两队（座位 0-2 / 1-3），记的是级数不是分数。
 // 一笔 = 一局的出完顺序（头游/二游/三游/末游）：胜方每人 +N，N 由头游同伴的名次查变体表——
-// 二游（双下）取 levelsPerDoubleDown（默认 3），三游（单下）取 levelsPerSingleDown（默认 2，旧碑缺省回落 1），末游恒 1。
+// 二游（双下）取 levelsPerDoubleDown（默认 3），三游（单下）取 levelsPerSingleDown（默认 2，旧石板缺省回落 1），末游恒 1。
 // 进贡只由名次推关系与规则提示（不记具体贡牌、不落抗贡状态）：
 //   单下：末游 → 头游；双下：三游、末游各进贡，头游收大牌；1+4（末游在胜方）：无进贡。
 // 级牌序列 2..A 共 13 级；过 A（级数 ≥ 13）宣告封顶。
@@ -24,11 +24,11 @@ export { GUANDAN_LEVELS, GUANDAN_CAP, levelName };
 export { teamOfSeat } from './teams';
 
 export interface GuandanInput {
-	/** 出完顺序：头游、二游、三游、末游；恰好 4 人、不重复、都在碑上 */
+	/** 出完顺序：头游、二游、三游、末游；恰好 4 人、不重复、都在石板上 */
 	finish: PlayerId[];
 }
 
-/** 同伴名次 → 进级数。旧碑 levelsPerSingleDown 缺省按 1（升级前"普通胜恒 1 级"）。 */
+/** 同伴名次 → 进级数。旧石板 levelsPerSingleDown 缺省按 1（升级前"普通胜恒 1 级"）。 */
 export function levelsForRank(
 	partnerRank: 2 | 3 | 4,
 	variant: Pick<GuandanVariant, 'levelsPerDoubleDown' | 'levelsPerSingleDown'>
@@ -38,11 +38,11 @@ export function levelsForRank(
 	return 1;
 }
 
-/** 出完顺序的座位序；校验 4 人、不重复、都在碑上。 */
+/** 出完顺序的座位序；校验 4 人、不重复、都在石板上。 */
 function finishSeats(finish: PlayerId[], players: { id: PlayerId }[]): number[] {
 	if (finish.length !== 4) throw new Error('掼蛋需要 4 人的出完顺序');
 	const seats = finish.map((id) => players.findIndex((p) => p.id === id));
-	if (seats.some((seat) => seat < 0)) throw new Error('出完顺序里有不在碑上的玩家');
+	if (seats.some((seat) => seat < 0)) throw new Error('出完顺序里有不在石板上的玩家');
 	if (new Set(seats).size !== 4) throw new Error('出完顺序不能重复');
 	return seats;
 }
@@ -137,7 +137,7 @@ export const guandan: Template<GuandanVariant> = {
 	minPlayers: 4,
 	maxPlayers: 4,
 	teams: 'alternating-pairs',
-	// 官方默认：双下 3 级、单下 2 级；开碑页可调成房规（双下 2 / 单下 1）
+	// 官方默认：双下 3 级、单下 2 级；开刻页可调成房规（双下 2 / 单下 1）
 	defaultVariant: { kind: 'guandan', levelsPerDoubleDown: 3, levelsPerSingleDown: 2 },
 	detect: detectGuandan
 };

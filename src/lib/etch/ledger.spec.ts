@@ -166,18 +166,18 @@ describe('roundOf / validateGame / nextSeq', () => {
 	});
 });
 
-describe('碑名（可选元数据）', () => {
+describe('石板名（可选元数据）', () => {
 	const base = {
 		templateId: 'generic' as const,
 		variant: { kind: 'generic' as const },
 		players: [{ id: 'p1', name: '甲' }]
 	};
 
-	it('开碑可带名，首尾空白被裁掉', () => {
+	it('开刻可带名，首尾空白被裁掉', () => {
 		expect(newGame({ ...base, name: '  周五晚  ' }).name).toBe('周五晚');
 	});
 
-	it('空白碑名不落字段（无名碑不写空串）', () => {
+	it('空白石板名不落字段（无名石板不写空串）', () => {
 		expect(newGame({ ...base, name: '   ' })).not.toHaveProperty('name');
 		expect(newGame(base)).not.toHaveProperty('name');
 	});

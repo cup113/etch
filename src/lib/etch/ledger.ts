@@ -69,7 +69,7 @@ function validateAppend(game: Game, entry: Entry): void {
 	}
 }
 
-/** 纯追加：校验通过则返回带新笔的碑，否则抛 LedgerError，原碑不动。 */
+/** 纯追加：校验通过则返回带新笔的石板，否则抛 LedgerError，原石板不动。 */
 export function appendEntry(game: Game, entry: Entry): Game {
 	validateAppend(game, entry);
 	return { ...game, entries: [...game.entries, entry] };
@@ -121,7 +121,7 @@ export function roundOf(game: Game, entry: Entry): number {
 	return 0;
 }
 
-/** 校验一整块碑（导入拓片用）：从骨架重放每一笔。坏数据抛 LedgerError。 */
+/** 校验一整块石板（导入拓片用）：从骨架重放每一笔。坏数据抛 LedgerError。 */
 export function validateGame(game: Game): void {
 	let replay: Game = { ...game, entries: [] };
 	for (const entry of game.entries) {
@@ -136,12 +136,12 @@ export function validateGame(game: Game): void {
 	}
 }
 
-/** 造一块新碑（开局）。players 至少一名。 */
+/** 造一块新石板（开局）。players 至少一名。 */
 export function newGame(input: {
 	templateId: Game['templateId'];
 	variant: Game['variant'];
 	players: { id: PlayerId; name: string }[];
-	/** 碑名（可选）；空白视为未命名，不落字段 */
+	/** 石板名（可选）；空白视为未命名，不落字段 */
 	name?: string;
 }): Game {
 	if (input.players.length === 0) throw new Error('a tablet needs players');

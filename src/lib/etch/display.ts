@@ -18,7 +18,7 @@ export function signed(n: number): string {
 	return n > 0 ? `+${n}` : String(n);
 }
 
-/** 拓片下载文件名：碑名净化后作前缀（去路径分隔符/空白），无名碑回落到 日期 + id 前缀。 */
+/** 拓片下载文件名：石板名净化后作前缀（去路径分隔符/空白），无名石板回落到 日期 + id 前缀。 */
 export function rubbingFileName(game: Game, lang: 'zh' | 'en'): string {
 	const stem = (game.name ?? '').replace(/[\\/:*?"<>|\s]+/g, '').slice(0, 30);
 	const date = formatDate(game.createdAt, lang).replaceAll(' ', '');

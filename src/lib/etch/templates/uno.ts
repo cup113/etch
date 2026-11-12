@@ -1,7 +1,7 @@
 // UNO：目标累积型，两种变体（CONTEXT.md「变体」）：
 //  - race（升）：赢家收走对手剩牌点数，先到 threshold（默认 500）宣告胜。
 //  - elimination（降）：各吃各的剩牌分，谁先 ≥ threshold（默认 300）宣告出局；
-//    仅剩一人未触线时宣告其为最后站立者。碑不执法：出局者仍可继续被刻。
+//    仅剩一人未触线时宣告其为最后站立者。石板不执法：出局者仍可继续被刻。
 
 import type { Game, PlayerId, PlayerRef, Proclamation } from '../types';
 import { fold } from '../ledger';
@@ -71,7 +71,7 @@ function detectUno(game: Game): Proclamation[] {
 		if ((totals[p.id] ?? 0) >= variant.threshold) eliminated.push(p.id);
 	}
 	if (variant.mode === 'race') {
-		// race：先到线者宣告获胜（多人同线全部宣告——碑只提示，不裁决）
+		// race：先到线者宣告获胜（多人同线全部宣告——石板只提示，不裁决）
 		return eliminated.map((playerId) => ({
 			kind: 'race-won' as const,
 			playerId,

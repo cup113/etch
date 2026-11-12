@@ -1,4 +1,4 @@
-// IndexedDB 持久化（ADR-0002）。IDB 不可用时上层退化为内存模式（"临时碑"）。
+// IndexedDB 持久化（ADR-0002）。IDB 不可用时上层退化为内存模式（"临时板"）。
 
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import type { Game, Player } from './types';

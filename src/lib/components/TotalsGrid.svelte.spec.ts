@@ -37,7 +37,7 @@ describe('TotalsGrid', () => {
 		await expect.element(page.getByTestId('total-p1')).toHaveTextContent(/老张\s*7/);
 	});
 
-	it('掼蛋碑显示级牌名', async () => {
+	it('掼蛋石板显示级牌名', async () => {
 		let g = newGame({
 			templateId: 'guandan',
 			variant: { kind: 'guandan', levelsPerDoubleDown: 2 },
@@ -54,7 +54,7 @@ describe('TotalsGrid', () => {
 		await expect.element(page.getByTestId('total-p1')).toHaveTextContent(/甲\s*A/);
 	});
 
-	it('双升碑同样显示级牌名；负级数（倒级防御）钳到 2', async () => {
+	it('双升石板同样显示级牌名；负级数（倒级防御）钳到 2', async () => {
 		let g = newGame({
 			templateId: 'shuangsheng',
 			variant: {

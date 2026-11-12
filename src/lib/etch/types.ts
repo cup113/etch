@@ -1,5 +1,5 @@
 // Etch 领域类型 —— 术语见 /CONTEXT.md。
-// 笔（Entry）不可变；碑（Game）是账本；凿除（Chisel）是冲正笔。
+// 笔（Entry）不可变；石板（Game）是账本；凿除（Chisel）是冲正笔。
 
 export type PlayerId = string;
 export type EntryId = string;
@@ -15,7 +15,7 @@ export type EntryKind = 'manual' | 'template' | 'chisel';
 /** 笔：一次不可分割的"刻"。追加后不可改、不可删（ADR-0001）。 */
 export interface Entry {
 	id: EntryId;
-	/** 碑内序号，从 1 起、连续递增（恒等于追加时的位置 + 1） */
+	/** 石板内序号，从 1 起、连续递增（恒等于追加时的位置 + 1） */
 	seq: number;
 	/** epoch 毫秒 */
 	ts: number;
@@ -30,7 +30,7 @@ export interface Entry {
 	lines: Line[];
 }
 
-/** 玩家入碑时的名字快照，与花名册解耦 */
+/** 玩家入石板时的名字快照，与花名册解耦 */
 export interface PlayerRef {
 	id: PlayerId;
 	name: string;
@@ -57,11 +57,11 @@ export interface UnoVariant {
 }
 
 /** 掼蛋：头游+二游（双下）与头游+三游（单下）的进级数都可配；头游+末游恒 1 级。
- *  levelsPerSingleDown 可缺省 = 旧碑（恒 1）回落；levelsPerDoubleDown 类型容忍旧值 1。 */
+ *  levelsPerSingleDown 可缺省 = 旧石板（恒 1）回落；levelsPerDoubleDown 类型容忍旧值 1。 */
 export interface GuandanVariant {
 	kind: 'guandan';
 	levelsPerDoubleDown: 1 | 2 | 3;
-	/** 旧碑无此字段；缺省按 1（升级前"普通胜恒 1 级"的行为） */
+	/** 旧石板无此字段；缺省按 1（升级前"普通胜恒 1 级"的行为） */
 	levelsPerSingleDown?: 1 | 2;
 }
 
@@ -82,13 +82,13 @@ export interface ShuangshengVariant {
 	grandWinBonus: boolean;
 	/** 允许倒级（抠底回退的罕见房规）：开启后刻入表单出现可选回退区 */
 	allowRollback: boolean;
-	/** 首庄队伍（座位 0-2 = 队 0，1-3 = 队 1）；旧碑只有队，新碑可由 firstDeclarer 推出 */
+	/** 首庄队伍（座位 0-2 = 队 0，1-3 = 队 1）；旧石板只有队，新石板可由 firstDeclarer 推出 */
 	firstDeclarerTeam: 0 | 1;
-	/** 首庄（可选）：第一局坐庄的人；缺省 = 旧碑，只知队 */
+	/** 首庄（可选）：第一局坐庄的人；缺省 = 旧石板，只知队 */
 	firstDeclarer?: PlayerId;
-	/** 下一局庄家规则；缺省 = rotate（旧碑按轮庄） */
+	/** 下一局庄家规则；缺省 = rotate（旧石板按轮庄） */
 	declarerFlow?: ShuangshengDeclarerFlow;
-	/** 必打级：none / A / JA；缺省 = none（旧碑兼容） */
+	/** 必打级：none / A / JA；缺省 = none（旧石板兼容） */
 	mustPlay?: ShuangshengMustPlay;
 }
 
@@ -101,7 +101,7 @@ export interface CaboVariant {
 export type Variant =
 	GenericVariant | DoudizhuVariant | UnoVariant | GuandanVariant | ShuangshengVariant | CaboVariant;
 
-/** 双升笔的结构化参数快照：庄家追踪、预指定与回退差值的重放依据（碑的折叠只用 lines）。 */
+/** 双升笔的结构化参数快照：庄家追踪、预指定与回退差值的重放依据（石板的折叠只用 lines）。 */
 export interface ShuangshengEntryMeta {
 	/** 新笔写入；旧笔没有，读时按双升处理 */
 	kind?: 'shuangsheng';
@@ -125,14 +125,14 @@ export interface GuandanEntryMeta {
 	finish: [PlayerId, PlayerId, PlayerId, PlayerId];
 }
 
-/** 笔的结构化快照：按碑的模板区分；双升旧笔无 kind，缺省按双升读。 */
+/** 笔的结构化快照：按石板的模板区分；双升旧笔无 kind，缺省按双升读。 */
 export type EntryMeta = ShuangshengEntryMeta | GuandanEntryMeta;
 
-/** 碑：一局牌的完整账本 */
+/** 石板：一局牌的完整账本 */
 export interface Game {
 	id: string;
 	createdAt: number;
-	/** 碑名（可选）：开碑时可写、之后可在碑务里改名；缺省显示模板名 */
+	/** 石板名（可选）：开刻时可写、之后可在本板里改名；缺省显示模板名 */
 	name?: string;
 	templateId: TemplateId;
 	variant: Variant;
@@ -147,7 +147,7 @@ export interface Player {
 	name: string;
 }
 
-/** 宣告：结构化事件，文案由 UI 按 i18n 渲染。碑不执法——宣告不改变任何行为。 */
+/** 宣告：结构化事件，文案由 UI 按 i18n 渲染。石板不执法——宣告不改变任何行为。 */
 export type Proclamation =
 	| { kind: 'race-won'; playerId: PlayerId; threshold: number }
 	| { kind: 'eliminated'; playerId: PlayerId; threshold: number }

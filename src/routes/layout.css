@@ -31,7 +31,7 @@
 	}
 }
 
-/* 数字与碑刻的等宽感 */
+/* 数字的等宽感：像刻进石头里的字距 */
 @utility tabular {
 	font-variant-numeric: tabular-nums;
 }

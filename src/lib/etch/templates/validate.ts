@@ -30,7 +30,7 @@ function validateShuangsheng(game: Game, variant: ShuangshengVariant): void {
 	}
 	if (variant.firstDeclarer !== undefined) {
 		const seat = seatOf(game, variant.firstDeclarer);
-		if (seat < 0) throw new LedgerError('bad-entry-meta', 'first declarer 不在碑上');
+		if (seat < 0) throw new LedgerError('bad-entry-meta', 'first declarer 不在石板上');
 		if (teamOfSeat(seat) !== variant.firstDeclarerTeam) {
 			throw new LedgerError('bad-entry-meta', 'first declarer 与 firstDeclarerTeam 不一致');
 		}
@@ -40,7 +40,7 @@ function validateShuangsheng(game: Game, variant: ShuangshengVariant): void {
 		const meta = entry.meta;
 		if (!meta) continue;
 		if (entry.kind === 'chisel') bad(entry.seq, '凿除笔不能带 meta');
-		if (meta.kind === 'guandan') bad(entry.seq, '双升碑上出现了掼蛋 meta');
+		if (meta.kind === 'guandan') bad(entry.seq, '双升石板上出现了掼蛋 meta');
 		const m = meta as ShuangshengEntryMeta;
 		if (m.declarerTeam !== 0 && m.declarerTeam !== 1) {
 			bad(entry.seq, 'declarerTeam 必须是 0 或 1');
@@ -50,11 +50,11 @@ function validateShuangsheng(game: Game, variant: ShuangshengVariant): void {
 		}
 		if (m.declarer !== undefined) {
 			const seat = seatOf(game, m.declarer);
-			if (seat < 0) bad(entry.seq, '本局庄家不在碑上');
+			if (seat < 0) bad(entry.seq, '本局庄家不在石板上');
 			if (teamOfSeat(seat) !== m.declarerTeam) bad(entry.seq, '本局庄家与庄家队不一致');
 		}
 		if (m.nextDeclarer !== undefined && seatOf(game, m.nextDeclarer) < 0) {
-			bad(entry.seq, '下局庄家不在碑上');
+			bad(entry.seq, '下局庄家不在石板上');
 		}
 		const hasTeam = m.rollbackTeam !== undefined;
 		const hasLevel = m.rollbackToLevel !== undefined;
@@ -78,13 +78,13 @@ function validateGuandan(game: Game): void {
 		const meta = entry.meta;
 		if (!meta) continue;
 		if (entry.kind === 'chisel') bad(entry.seq, '凿除笔不能带 meta');
-		if (meta.kind !== 'guandan') bad(entry.seq, '掼蛋碑上出现了非掼蛋 meta');
+		if (meta.kind !== 'guandan') bad(entry.seq, '掼蛋石板上出现了非掼蛋 meta');
 		const { finish } = meta as GuandanEntryMeta;
 		if (!Array.isArray(finish) || finish.length !== 4) {
 			bad(entry.seq, '出完顺序必须有 4 人');
 		}
 		const seats = finish.map((id) => seatOf(game, id));
-		if (seats.some((seat) => seat < 0)) bad(entry.seq, '出完顺序里有不在碑上的玩家');
+		if (seats.some((seat) => seat < 0)) bad(entry.seq, '出完顺序里有不在石板上的玩家');
 		if (new Set(seats).size !== 4) bad(entry.seq, '出完顺序不能重复');
 	}
 }

@@ -16,7 +16,7 @@ function mkUno(mode: 'race' | 'elimination'): Game {
 	});
 }
 
-describe('ProclamationBar（碑不执法）', () => {
+describe('ProclamationBar（石板不执法）', () => {
 	it('race 到线：宣告到达，不锁任何操作（无 disabled 态可断言，宣告就是全部）', async () => {
 		let g = mkUno('race');
 		g = appendEntry(g, manualEntry(1, [{ playerId: 'p1', delta: 500 }]));

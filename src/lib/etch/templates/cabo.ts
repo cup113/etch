@@ -1,6 +1,6 @@
 // CABO：正向累加、触线终局（官方口径）。每轮选"出完 / 叫牌者"记 0，
 // 其余人各记手中剩牌点数；到 threshold（默认 100）宣告当前最低分者胜。
-// 碑不执法：触线只宣告不锁刻；叫错罚分等房规由用户直接折进输入的数字。
+// 石板不执法：触线只宣告不锁刻；叫错罚分等房规由用户直接折进输入的数字。
 
 import type { CaboVariant, Game, PlayerId, PlayerRef, Proclamation } from '../types';
 import { fold } from '../ledger';
@@ -43,7 +43,7 @@ function detectCabo(game: Game): Proclamation[] {
 	const totals = fold(game);
 	const crossed = game.players.filter((p) => (totals[p.id] ?? 0) >= variant.threshold);
 	if (crossed.length === 0) return [];
-	// 有人触线 → 终局，宣告当前最低分者胜（并列全部宣告——碑只提示，不裁决）
+	// 有人触线 → 终局，宣告当前最低分者胜（并列全部宣告——石板只提示，不裁决）
 	const min = Math.min(...game.players.map((p) => totals[p.id] ?? 0));
 	return game.players
 		.filter((p) => (totals[p.id] ?? 0) === min)

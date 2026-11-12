@@ -16,23 +16,23 @@ export const dict = {
 	confirm: { zh: '确定', en: 'Confirm' },
 	close: { zh: '收起', en: 'Close' },
 	back: { zh: '返回', en: 'Back' },
-	loading: { zh: '读碑中…', en: 'Reading the tablet…' },
+	loading: { zh: '读板中…', en: 'Reading the tablet…' },
 	memoryWarning: {
-		zh: '临时碑：当前环境无法持久保存，关闭页面后数据将丢失。',
+		zh: '临时板：当前环境无法持久保存，关闭页面后数据将丢失。',
 		en: 'Temporary tablet: storage is unavailable here; data will be lost when the page closes.'
 	},
 
 	// 首页
-	newTablet: { zh: '开新碑', en: 'New tablet' },
-	history: { zh: '碑林', en: 'History' },
+	newTablet: { zh: '刻新板', en: 'New tablet' },
+	history: { zh: '板架', en: 'History' },
 	emptyHistory: {
-		zh: '还没有碑。开一局，刻下第一笔。',
+		zh: '还没有石板。开一局，刻下第一笔。',
 		en: 'No tablets yet. Start a game and make the first mark.'
 	},
 	playersCount: { zh: '{n} 人', en: '{n} players' },
 	entriesCount: { zh: '{n} 笔', en: '{n} marks' },
 
-	// 模板（首页卡片只留名字：说明属于开碑页与信息图标，详见 UI 准则「可见文案是成本」）
+	// 模板（首页卡片只留名字：说明属于刻新板页与信息图标，详见 UI 准则「可见文案是成本」）
 	tplGeneric: { zh: '通用', en: 'Generic' },
 	tplDoudizhu: { zh: '斗地主', en: 'Dou Dizhu' },
 	tplUno: { zh: 'UNO', en: 'UNO' },
@@ -40,7 +40,7 @@ export const dict = {
 	tplCabo: { zh: 'CABO', en: 'CABO' },
 	tplShuangsheng: { zh: '双升', en: 'Shuangsheng' },
 
-	// 开碑
+	// 刻新板
 	variant: { zh: '变体', en: 'Variant' },
 	unoModeRace: { zh: '计分制', en: 'Race' },
 	unoModeElimination: { zh: '出局制', en: 'Elimination' },
@@ -63,7 +63,7 @@ export const dict = {
 	declarerFlowReveal: { zh: '亮牌', en: 'Reveal' },
 	declarerFlowDesignate: { zh: '指定', en: 'Designate' },
 	caboThreshold: { zh: '终局线', en: 'Game ends at' },
-	tabletNamePlaceholder: { zh: '碑名（可选）', en: 'Name (optional)' },
+	tabletNamePlaceholder: { zh: '石板名（可选）', en: 'Name (optional)' },
 	renameTablet: { zh: '改名', en: 'Rename' },
 	players: { zh: '玩家', en: 'Players' },
 	playerPlaceholder: { zh: '输入名字，回车加入', en: 'Type a name, press Enter' },
@@ -78,7 +78,7 @@ export const dict = {
 		zh: '按出牌顺序添加；1、3 号一队，2、4 号一队；下一位是下家。',
 		en: 'Add in play order; seats 1 & 3 team up, 2 & 4 team up; the next seat is the next player.'
 	},
-	startTablet: { zh: '开碑', en: 'Start' },
+	startTablet: { zh: '开刻', en: 'Start' },
 
 	// 变体说明（信息图标内文）：标签只留结论；换算与对照一律用表格，一句话能说清的才写字
 	infoUnoMode: { zh: '玩法', en: 'Modes' },
@@ -101,7 +101,7 @@ export const dict = {
 	colPartnerFinish: { zh: '头游同伴', en: 'Partner of 1st' },
 	colLevels: { zh: '进级', en: 'Levels' },
 	guandanNote: {
-		zh: '数字可在开碑页改；级牌 2 → A，过 A 封顶。',
+		zh: '数字可在开刻页改；级牌 2 → A，过 A 封顶。',
 		en: 'Editable here; levels run 2 → A.'
 	},
 
@@ -203,7 +203,7 @@ export const dict = {
 		en: 'Return ≤10; two jokers let the losing side refuse (1st leads); single: last leads; double: higher giver leads.'
 	},
 
-	// 碑面
+	// 板面
 	etchNow: { zh: '刻', en: 'Etch' },
 	markNo: { zh: '第 {n} 刻', en: 'Mark {n}' },
 	manualEntry: { zh: '手工', en: 'Manual' },
@@ -211,7 +211,7 @@ export const dict = {
 	chiselAction: { zh: '凿除', en: 'Chisel off' },
 	chiselEntryRow: { zh: '凿 · 第 {n} 刻', en: 'Chisel · mark {n}' },
 	chiselConfirm: {
-		zh: '凿掉这一笔？它将划掉显示、不再计分，但永远留在碑上。',
+		zh: '凿掉这一笔？它将划掉显示、不再计分，但永远留在石板上。',
 		en: 'Chisel off this mark? It shows struck-through and stops counting — but it stays on the tablet forever.'
 	},
 	proclRaceWon: { zh: '{name} 到达 {threshold} 分', en: '{name} reached {threshold}' },
@@ -296,15 +296,19 @@ export const dict = {
 	checkInput: { zh: '检查一下输入。', en: 'Check the input.' },
 	errLedger: { zh: '账本拒绝了这笔：{reason}', en: 'The ledger refused this mark: {reason}' },
 
-	// 碑务
-	tabletMenu: { zh: '碑务', en: 'Tablet' },
+	// 本板
+	tabletMenu: { zh: '本板', en: 'Tablet' },
 	exportRubbing: { zh: '导出拓片', en: 'Export rubbing' },
 	importRubbing: { zh: '导入拓片', en: 'Import rubbing' },
-	importOk: { zh: '拓片已恢复为碑。', en: 'Rubbing restored as a tablet.' },
+	importOk: { zh: '拓片已恢复为石板。', en: 'Rubbing restored as a tablet.' },
+	boardMissing: {
+		zh: '这块石板不在了。可能已被磨去。',
+		en: 'This tablet is gone. It may have been erased.'
+	},
 	importFail: { zh: '拓片无法读取：{reason}', en: 'Cannot read the rubbing: {reason}' },
-	eraseTablet: { zh: '磨碑（整碑销毁）', en: 'Erase tablet (permanent)' },
+	eraseTablet: { zh: '磨板（整块销毁）', en: 'Erase tablet (permanent)' },
 	eraseConfirm: {
-		zh: '磨碑将销毁这块碑的全部历史，无法恢复。已导出的拓片不受影响。确定？',
+		zh: '磨板将销毁这块石板的全部历史，无法恢复。已导出的拓片不受影响。确定？',
 		en: 'Erasing destroys this tablet’s entire history permanently. Exported rubbings survive. Are you sure?'
 	}
 } satisfies Record<string, DictEntry>;

@@ -1,5 +1,5 @@
 <script lang="ts">
-	// 宣告横幅（碑不执法）：终局条件满足时提示，从不锁死任何操作。
+	// 宣告横幅（石板不执法）：终局条件满足时提示，从不锁死任何操作。
 	import { templateOf } from '../etch/templates';
 	import { nameOf } from '../etch/display';
 	import type { Game } from '../etch/types';

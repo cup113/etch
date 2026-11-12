@@ -1,5 +1,5 @@
 <script lang="ts">
-	// 首页：新碑入口（六张模板卡）+ 碑林（历史）+ 拓片导入 + 设置。
+	// 首页：新石板入口（六张模板卡）+ 板架（历史）+ 拓片导入 + 设置。
 	import { resolve } from '$app/paths';
 	import { etchState, importRubbing } from '../lib/etch/store.svelte';
 	import { unrub } from '../lib/etch/rubbing';
