@@ -5,6 +5,7 @@
 	import type { LayoutProps } from './$types';
 	import { etchState, initEtch } from '../lib/etch/store.svelte';
 	import { initSettings } from '../lib/etch/settings.svelte';
+	import { initVariantMemory, variantMemoryReady } from '../lib/etch/variantMemory.svelte';
 	import { initI18n, i18nReady, t, currentLang } from '../lib/i18n/i18n.svelte';
 
 	let { children }: LayoutProps = $props();
@@ -12,6 +13,7 @@
 	onMount(() => {
 		void initI18n();
 		void initSettings();
+		void initVariantMemory();
 		void initEtch();
 	});
 
@@ -31,7 +33,7 @@
 	/>
 </svelte:head>
 
-{#if etchState.ready && i18nReady()}
+{#if etchState.ready && i18nReady() && variantMemoryReady()}
 	<div class="mx-auto min-h-dvh w-full max-w-md px-4 pt-8 pb-16">
 		{@render children()}
 	</div>

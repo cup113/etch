@@ -1,10 +1,11 @@
 <script lang="ts">
-	// 开碑：碑名（可选）→ 选变体 → 按座位序加玩家（combobox，名册联想/显式新建）→ 开碑进碑面。
+	// 开刻：石板名（可选）→ 选变体 → 按座位序加玩家（combobox，名册联想/显式新建）→ 开刻进板面。
 	// 变体区只放结论式标签；机理与例子收在信息图标里（InfoHint）。
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { page } from '$app/state';
 	import { addOrReusePlayer, createTablet } from '../../../lib/etch/store.svelte';
+	import { rememberedVariant, rememberVariant } from '../../../lib/etch/variantMemory.svelte';
 	import { templateOf } from '../../../lib/etch/templates';
 	import { teamOfSeat } from '../../../lib/etch/templates/teams';
 	import { tplNameKey } from '../../../lib/etch/display';
@@ -24,19 +25,48 @@
 	const templateId = $derived(page.params.templateId as TemplateId);
 	const template = $derived(templateOf(templateId));
 
-	// 变体局部状态
-	let unoMode = $state<'race' | 'elimination'>('race');
-	let unoThreshold = $state(500);
-	let guandanSecond = $state<2 | 3>(3);
-	let guandanThird = $state<1 | 2>(2);
-	let caboThreshold = $state(100);
-	let ssLevelsAt80 = $state<0 | 1>(0);
-	let ssCap = $state<160 | 200 | 0>(0);
-	let ssGrandBonus = $state(false);
-	let ssAllowRollback = $state(false);
-	let ssDeclarerFlow = $state<ShuangshengDeclarerFlow>('rotate');
-	let ssMustPlay = $state<ShuangshengMustPlay>('none');
-	/** 首庄（人）；留空则在第一笔刻入时选 */
+	// 变体局部状态。缺省值 = 上次开同模板时用的那一套（variantMemory）；首庄不沿用：
+	// 它是"人"，座位随这次的玩家顺序变。
+	const prev = rememberedVariant(page.params.templateId as TemplateId);
+
+	/** 存回来的是上次的数就用它，否则回缺省（旧版本存的形状可能不全）。 */
+	function keptInt(v: unknown, fallback: number): number {
+		return typeof v === 'number' && Number.isInteger(v) && v > 0 ? v : fallback;
+	}
+
+	function keptOneOf<T extends string>(v: unknown, allowed: readonly T[], fallback: T): T {
+		return allowed.includes(v as T) ? (v as T) : fallback;
+	}
+
+	function keptCap(v: unknown): 160 | 200 | 0 {
+		return v === 160 || v === 200 ? v : 0;
+	}
+
+	const prevUno = prev?.kind === 'uno' ? prev : null;
+	const prevGuandan = prev?.kind === 'guandan' ? prev : null;
+	const prevCabo = prev?.kind === 'cabo' ? prev : null;
+	const prevSs = prev?.kind === 'shuangsheng' ? prev : null;
+
+	let unoMode = $state<'race' | 'elimination'>(
+		prevUno?.mode === 'elimination' ? 'elimination' : 'race'
+	);
+	let unoThreshold = $state(
+		keptInt(prevUno?.threshold, prevUno?.mode === 'elimination' ? 300 : 500)
+	);
+	let guandanSecond = $state<2 | 3>(prevGuandan?.levelsPerDoubleDown === 2 ? 2 : 3);
+	let guandanThird = $state<1 | 2>(prevGuandan?.levelsPerSingleDown === 1 ? 1 : 2);
+	let caboThreshold = $state(keptInt(prevCabo?.threshold, 100));
+	let ssLevelsAt80 = $state<0 | 1>(prevSs?.levelsAt80 === 1 ? 1 : 0);
+	let ssCap = $state<160 | 200 | 0>(keptCap(prevSs?.defenderCapScore));
+	let ssGrandBonus = $state(prevSs?.grandWinBonus === true);
+	let ssAllowRollback = $state(prevSs?.allowRollback === true);
+	let ssDeclarerFlow = $state<ShuangshengDeclarerFlow>(
+		keptOneOf(prevSs?.declarerFlow, ['rotate', 'reveal', 'designate'] as const, 'rotate')
+	);
+	let ssMustPlay = $state<ShuangshengMustPlay>(
+		keptOneOf(prevSs?.mustPlay, ['none', 'A', 'JA'] as const, 'none')
+	);
+	/** 首庄（人）；留空则在第一笔刻入时选。不沿用上次 —— 一桌人换过，座位就不作数了。 */
 	let ssFirstDeclarer = $state<PlayerId | null>(null);
 
 	let tabletName = $state('');
@@ -97,6 +127,12 @@
 							: templateId === 'doudizhu'
 								? { kind: 'doudizhu' }
 								: { kind: 'generic' };
+		// 先记下这套变体，下一块同模板的石板就带回来；记不住不该挡住开刻
+		try {
+			await rememberVariant(variant);
+		} catch {
+			/* 存储不可用（临时板模式）时忽略 */
+		}
 		const game = await createTablet(templateId, variant, picked, tabletName);
 		await goto(resolve('/game/[id]', { id: game.id }));
 	}
