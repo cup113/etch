@@ -311,6 +311,13 @@ test('变体沿用：下次开同模板的石板带回上次的变体（首庄�
 	await expect(page.getByTestId('uno-elimination')).toHaveClass(/etch-chip-on/);
 	await expect(page.getByTestId('uno-threshold')).toHaveValue('250');
 
+	// 点已经亮着的那一个模式，不该把沿用来的 250 抹成默认的 300
+	await page.getByTestId('uno-elimination').click();
+	await expect(page.getByTestId('uno-threshold')).toHaveValue('250');
+	// 换成另一个模式才回落到该模式的默认线
+	await page.getByTestId('uno-race').click();
+	await expect(page.getByTestId('uno-threshold')).toHaveValue('500');
+
 	// 双升：必打级沿用，首庄不沿用 —— 首庄是人，座位随这批玩家换
 	await page.goto('/new/shuangsheng');
 	await page.getByTestId('ss-must-play-a').click();

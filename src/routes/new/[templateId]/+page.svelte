@@ -181,6 +181,9 @@
 				type="button"
 				class="flex-1 etch-chip {unoMode === 'race' ? 'etch-chip-on' : ''}"
 				onclick={() => {
+					// 已经亮着的那一个不动任何东西：阈值可能是沿用来的 250，
+					// 误触一下不该把它抹成默认值。
+					if (unoMode === 'race') return;
 					unoMode = 'race';
 					unoThreshold = 500;
 				}}
@@ -192,6 +195,7 @@
 				type="button"
 				class="flex-1 etch-chip {unoMode === 'elimination' ? 'etch-chip-on' : ''}"
 				onclick={() => {
+					if (unoMode === 'elimination') return;
 					unoMode = 'elimination';
 					unoThreshold = 300;
 				}}
